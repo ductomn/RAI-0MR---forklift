@@ -1,0 +1,28 @@
+name: ESP32 Build Check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Compile ESP32 Sketch
+        uses: arduino/compile-sketches@v1
+        with:
+          platforms: |
+            - name: "esp32:esp32"
+              version: "2.0.17"  # Force version 2.0.17
+              source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          
+          fqbn: "esp32:esp32:esp32"
+          
+          libraries: |
+            - name: ESPAsyncWebSrv
+            - name: AsyncTCP        # Mandatory dependency for ESPAsyncWebSrv on ESP32
+            - name: ESP32Servo      # Added for completeness based on your log
+            
+          sketch-paths: |
+            - firmware/MiniFork_wifi2.0
