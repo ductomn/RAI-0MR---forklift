@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Arduino / C++
+# Ignore build artifacts (libraries/compiled binaries)
+build/
+out/
+bin/
+*.o
+*.a
+*.so
+*.elf
+*.hex
+*.bin
+
+# Local Arduino IDE settings
+.vscode/
+.arduinoIDE/
+*.local.properties
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# CI/CD and Tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.black

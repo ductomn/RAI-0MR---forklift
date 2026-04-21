@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forklift"
+version = "0.1.0"
+description = "A Python package for trajectory planning and controlling a forklift robot."
+requires-python = ">=3.9.0"
+dependencies = [
+    "pyserial",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+]
