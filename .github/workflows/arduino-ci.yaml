@@ -1,6 +1,12 @@
 name: ESP32 Build Check
 
-on: [push, pull_request]
+on: 
+  push:
+    paths:
+      - 'firmware/**'
+  pull_request:
+    paths:
+      - 'firmware/**'
 
 jobs:
   build:
