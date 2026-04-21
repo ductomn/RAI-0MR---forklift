@@ -13,9 +13,10 @@ jobs:
         uses: arduino/compile-sketches@v1
         with:
           platforms: |
-            - name: "esp32:esp32"
+            - name: "esp32:esp32@2.0.17"
               source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-          # Replace 'esp32:esp32:esp32' with your specific board, e.g., 'esp32:esp32:esp32da'
           fqbn: "esp32:esp32:esp32"
+          libraries: |
+            - name: "ESP32Servo"
           sketch-paths: |
             - firmware/MiniFork_wifi2.0
