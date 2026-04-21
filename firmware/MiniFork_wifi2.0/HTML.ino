@@ -1,5 +1,4 @@
 // This file contains the HTML data for the ESP32.
-//dfsbf
 
 const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 <!DOCTYPE html>
