@@ -10,7 +10,8 @@ requires-python = ">=3.9.0"
 dependencies = [
     "pyserial",
     "asyncio",
-    "websockets"
+    "websockets",
+    "opencv-python"
 ]
 
 [project.optional-dependencies]
