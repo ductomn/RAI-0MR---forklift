@@ -3,7 +3,7 @@ import numpy as np
 
 ## Bycicle model with back wheel rotation
 class ForkSim:
-    def __init__(self, geometry=0.01, maxMin=[20, np.pi]):
+    def __init__(self, geometry=0.01, maxMin=[np.pi, 20]):
         self.L = geometry  # mm
         self.limFi = maxMin[0]  # rad
         self.limV = maxMin[1]  # m/s

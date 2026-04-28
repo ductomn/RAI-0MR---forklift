@@ -50,7 +50,10 @@ class AstarHybrid:
         return [sCost, gCost, fCost]
 
     def checkBoundaries(self, state):
-        x, y, theta = state
+        x, y, _ = state
+        bx, by = self.stateSpace
+
+        return 0 > x > bx and 0 > y > by
 
     def checkGoal(self, tol, node):
         x, y, theta = node.state
@@ -123,4 +126,11 @@ def MainPathPlaning(dt, start, goal, stateSpace, tol):
             if planer.checkGoal(tol, newNode):
                 return planer.reconstructPath(newNode)
 
+            # check if visited
+            if any(np.allclose(newNode.state, c.state, atol=0.1) for c in closed):
+                continue
+            # save
             heapq.heappush(open, newNode)
+
+
+print(MainPathPlaning(0.001, [0, 0, 0], [10, 10, 0], [20, 20], 0.10))
