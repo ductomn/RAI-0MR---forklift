@@ -1,6 +1,7 @@
 import cv2
 import math
 import numpy as np
+import depthai as dai
 
 
 class Detection:
@@ -10,10 +11,10 @@ class Detection:
             "height": 480,
             "fps": 30
         }
-        # self.capt = cv2.VideoCapture(1)
-        # self.capt.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_settings["width"])
-        # self.capt.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_settings["height"])
-        # self.capt.set(cv2.CAP_PROP_FPS, self.camera_settings["fps"])
+        # self.cam = cv2.VideoCapture(1)
+        # self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_settings["width"])
+        # self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_settings["height"])
+        # self.cam.set(cv2.CAP_PROP_FPS, self.camera_settings["fps"])
 
         # Aruco marker detection setup
         self.dictionary = dictionary
@@ -39,8 +40,16 @@ class Detection:
         )
         self.dist_coeffs = np.zeros((4, 1), dtype=np.float32)
 
+    def load_calibration(self, width, height, fps):
+        # Assuming 'cam' is your depthai.device object
+        calibration_handler = self.cam.readCalibration()
+        # Get intrinsics for the RGB camera
+        camera_matrix = calibration_handler.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 1920, 1080)
+        # Get distortion coefficients
+        dist_coeffs = calibration_handler.getDistortionCoefficients(dai.CameraBoardSocket.RGB)
+
     def capture_frame(self):
-        ret, frame = self.capt.read()
+        ret, frame = self.cam.read()
         if not ret:
             print("Failed to capture frame from camera")
             return None
