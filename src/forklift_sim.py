@@ -44,21 +44,21 @@ class ForkSim:
 
 
 class CorrectPath:
-    def __init__(self, state0, action0):
-        self.states = [state0]  # [x, y, theta]
-        self.actions = [action0]  # [v, fi]
+    def __init__(self):
+        self.path = []  # [x, y, theta]
+        self.actions = []  # [v, fi]
         self.index = 0  # this defines index of actual action that is processed
 
-    def save(self, newState, newAction):
-        self.states.append(newState)
-        self.actions.append(newAction)
+    def save(self, path, actions):
+        self.path = path
+        self.actions = actions
 
     def error(self, realState):
         # realState [x, y, theta]
         rx, ry, rtheta = realState
 
         # sim state
-        sx, sy, stheta = self.states[self.index]
+        sx, sy, stheta = self.path[self.index]
 
         # Calculate actual error
         errPos = np.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
