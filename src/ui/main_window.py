@@ -20,21 +20,23 @@ class MainWindow(QMainWindow):
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMinimumSize(640, 480)
 
-        self.btn_forward = QPushButton("Forward")
-        self.btn_stop = QPushButton("Stop")
+        self.btn_showPath = QPushButton("Show path")
+        self.btn_go = QPushButton("Go")
+        self.btn_override = QPushButton("Override")
 
         # Connect button signals to slots (dummy slots for now)
-        self.btn_forward.clicked.connect(self.on_forward_clicked)
-        self.btn_stop.clicked.connect(self.on_stop_clicked)
+        self.btn_showPath.clicked.connect(self.on_showPath_clicked)
+        self.btn_go.clicked.connect(self.on_go_clicked)
+        self.btn_override.clicked.connect(self.on_override_clicked)
 
         # Setup Layouts
         vbox = QVBoxLayout()
         vbox.addWidget(self.image_label)
 
         hbox = QHBoxLayout()
-        hbox.addWidget(self.btn_forward)
-        hbox.addWidget(self.btn_stop)
-
+        hbox.addWidget(self.btn_showPath)
+        hbox.addWidget(self.btn_go)
+        hbox.addWidget(self.btn_override)
         vbox.addLayout(hbox)
 
         main_widget = QWidget()
@@ -45,8 +47,11 @@ class MainWindow(QMainWindow):
         """Slot that receives the QImage from the worker thread and updates the GUI."""
         self.image_label.setPixmap(QPixmap.fromImage(qt_image))
 
-    def on_forward_clicked(self):
-        print("Forward button clicked - Add forklift throttle logic here")
+    def on_showPath_clicked(self):
+        print("Show path button clicked - Add path visualization logic here")
 
-    def on_stop_clicked(self):
-        print("Stop button clicked - Add forklift stop logic here")
+    def on_go_clicked(self):
+        print("Go button clicked - Add forklift movement logic here")
+
+    def on_override_clicked(self):
+        print("Override button clicked - Add override logic here")
