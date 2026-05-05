@@ -7,6 +7,7 @@ from qasync import asyncSlot
 
 from ui.main_window import MainWindow
 from perception.threads import PerceptionThread
+from forklift_control import ForkliftClient
 
 
 class AppController:
@@ -20,6 +21,10 @@ class AppController:
 
         # Route the math to the hardware via qasync
         # self.perception_thread.drive_command_signal.connect(self.handle_autonomous_drive)
+
+        self.gui.toggle_showPath_signal.connect(self.perception_thread.toggle_showPath)    
+        self.gui.go_signal.connect(self.perception_thread.toggle_go)
+        self.gui.override_signal.connect(self.perception_thread.toggle_override)
 
         app = QApplication.instance()
         if app is not None:
