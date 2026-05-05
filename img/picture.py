@@ -11,7 +11,7 @@ marker_size = 100
 ####################
 ###ArUco detector###
 ####################
-input_image = cv2.imread("img/foto.jpg", cv2.IMREAD_COLOR)
+input_image = cv2.imread("img/forklift_code.jpg", cv2.IMREAD_COLOR)
 parameters = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(dictionary,parameters)
 
