@@ -7,3 +7,10 @@ Buttons
     Show path (toggle)
     Go
     Override
+    Extra: choose path-planning algorithm
+
+To-Do
+    integration of everything together 
+    implement the buttons and their functions
+    implement forklift control with PC keyboard
+    implement forklift control through threads (PC path-planning)
