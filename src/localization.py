@@ -80,6 +80,33 @@ class Detection:
         print(f"Orientation (angle): {angle_deg} degrees")
 
         return angle_deg
+    
+    def get_center(self, corners):
+        """
+        Calculate the center point of the marker in 2D
+
+        This is a simplified approach that only considers the first two corners of the marker.
+        For more accurate 3D pose estimation, use get_pose
+        """
+        marker = corners[0][0]
+        print(f"marker: {marker}")
+
+        # Calculate the center point of the marker
+        center_x = (marker[0][0] + marker[1][0] + marker[2][0] + marker[3][0]) / 4
+        center_y = (marker[0][1] + marker[1][1] + marker[2][1] + marker[3][1]) / 4
+        print(f"Center (x, y): ({center_x}, {center_y})")
+
+        return center_x, center_y
+    
+    def get_position_simple(self, corners):
+        """
+        Simple position (center) and orientation (angle) estimation in 2D
+        """
+
+        center_x, center_y = self.get_center(corners)
+        angle_deg = self.get_angle(corners)
+
+        return [center_x, center_y, angle_deg]
 
     def _rotation_matrix_to_euler_angles(self, rotation_matrix):
         sy = math.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)
