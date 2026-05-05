@@ -5,7 +5,7 @@ import depthai as dai
 
 
 class Detection:
-    def __init__(self, dictionary):
+    def __init__(self, dictionary=cv2.aruco.DICT_4X4_100):
         self.camera_settings = {
             "width": 640,
             "height": 480,
@@ -17,7 +17,7 @@ class Detection:
         # self.cam.set(cv2.CAP_PROP_FPS, self.camera_settings["fps"])
 
         # Aruco marker detection setup
-        self.dictionary = dictionary
+        self.dictionary = cv2.aruco.getPredefinedDictionary(dictionary)
         self.parameters = cv2.aruco.DetectorParameters()
         self.detector = cv2.aruco.ArucoDetector(
             self.dictionary, self.parameters)
