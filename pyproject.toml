@@ -12,8 +12,10 @@ dependencies = [
     "asyncio",
     "websockets",
     "opencv-python",
+    "numpy",
     "depthai",
-    "open3d"
+    "pyqt6",
+    "matplotlib",
 ]
 
 [project.optional-dependencies]
