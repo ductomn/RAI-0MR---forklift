@@ -16,6 +16,8 @@ from ui.main_window import MainWindow
 from perception.threads import PerceptionThread
 from forklift_control import ForkliftClient
 
+from pathPlaning_Astar.PathMain import MainPathPlaning
+
 
 class AppController:
     def __init__(self):

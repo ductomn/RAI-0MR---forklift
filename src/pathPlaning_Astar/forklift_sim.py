@@ -41,27 +41,3 @@ class ForkSim:
         thetaNew = (thetaNew + np.pi) % (2 * np.pi) - np.pi
 
         return np.array([xNew, yNew, thetaNew])
-
-
-class CorrectPath:
-    def __init__(self):
-        self.path = []  # [x, y, theta]
-        self.actions = []  # [v, fi]
-        self.index = 0  # this defines index of actual action that is processed
-
-    def save(self, path, actions):
-        self.path = path
-        self.actions = actions
-
-    def error(self, realState):
-        # realState [x, y, theta]
-        rx, ry, rtheta = realState
-
-        # sim state
-        sx, sy, stheta = self.path[self.index]
-
-        # Calculate actual error
-        errPos = np.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
-        errTheta = np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)
-
-        return [errPos, errTheta]
