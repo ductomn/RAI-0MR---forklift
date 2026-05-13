@@ -55,22 +55,20 @@ class PerceptionThread(QThread):
                         # put text on the image to indicate path planning is active
                         cv2.putText(img, "Path Planning Active", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-                        print("Showing path - Add path planning logic here")
+                        # print("Showing path - Add path planning logic here")
 
                     # # Emit Control Commands to the Forklift
                     # if self.go and commands:
                     #     self.drive_command_signal.emit(commands)
 
-                    # 5. Format and Emit Image to the GUI
-                    rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    h, w, ch = rgb_image.shape
-                    qt_image = QImage(rgb_image.data, w, h, ch *
-                                      w, QImage.Format.Format_RGB888)
-
                 else:
-                    print("Override mode - Add manual control logic here")
+                    # print("Override mode - Add manual control logic here")
                     self.msleep(100)
                 
+                rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgb_image.shape
+                qt_image = QImage(rgb_image.data, w, h, ch *
+                                    w, QImage.Format.Format_RGB888)
                 self.new_frame_signal.emit(qt_image)
         finally:
             camera.release()

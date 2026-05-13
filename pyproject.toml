@@ -16,6 +16,7 @@ dependencies = [
     "depthai",
     "pyqt6",
     "matplotlib",
+    "qasync",
 ]
 
 [project.optional-dependencies]
