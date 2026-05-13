@@ -1,13 +1,6 @@
 from PyQt6.QtGui import QImage
-from PyQt6.QtCore import QThread, pyqtSignal
-import sys
+from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 import cv2
-import numpy as np
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QLabel, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QWidget)
-from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot,  Qt
-from PyQt6.QtGui import QImage, QPixmap
-from qasync import asyncSlot
 
 from localization import Detection
 
@@ -61,10 +54,7 @@ class PerceptionThread(QThread):
                     # if self.go and commands:
                     #     self.drive_command_signal.emit(commands)
 
-                else:
-                    # print("Override mode - Add manual control logic here")
-                    self.msleep(100)
-                
+                # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 h, w, ch = rgb_image.shape
                 qt_image = QImage(rgb_image.data, w, h, ch *
