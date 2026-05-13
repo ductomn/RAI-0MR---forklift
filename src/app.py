@@ -1,19 +1,27 @@
 import sys
 import cv2
 import numpy as np
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QLabel, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QHBoxLayout,
+    QWidget,
+)
 from qasync import asyncSlot
 
 from ui.main_window import MainWindow
 from perception.threads import PerceptionThread
+from forklift_control import ForkliftClient
 
 
 class AppController:
     def __init__(self):
         self.gui = MainWindow()
         self.perception_thread = PerceptionThread()
-        # self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
+        self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
 
         # Route the image to the GUI
         self.perception_thread.new_frame_signal.connect(self.gui.display_image)
@@ -38,7 +46,7 @@ class AppController:
             await self.forklift.send_steering(commands["steering"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = AppController()
     controller.gui.show()
