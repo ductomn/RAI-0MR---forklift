@@ -13,6 +13,12 @@ class MainPathPlaning:
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
     def startPlaning(self, dt, start, goal, stateSpace, tol):
+        # Reset
+        self.path = []  # [x, y, theta]
+        self.actions = []  # [v, fi]
+        self.index = 0  # this defines index of actual action that is processed
+        self.badPath = []  # Here is saved estimated path witch didnt came to the end
+
         avalibeActions = [
             [3, np.pi / 5],
             [3, np.pi / 8],
@@ -76,11 +82,11 @@ class MainPathPlaning:
                 # check if in visited if ewerithing is ok save
                 key = self.state_key(state)
                 if key not in open_visited or newCost[2] < open_visited[key]:
+                    i += 1
                     open_visited[key] = newCost[2]
                     heapq.heappush(open, newNode)
 
                 # Stop if too long search
-                i += 1
                 if i >= 1e6:
                     self.badPath, self.actions = planer.reconstructPath(newNode)
                     return
@@ -89,11 +95,11 @@ class MainPathPlaning:
         x, y, theta = stateCheck
         return (round(float(x), 1), round(float(y), 1), round(float(theta), 1))
 
-    def save(self, path, actions):
-        self.path = path
-        self.actions = actions
+    def error(self, epsilon, realState):
+        # check if empty
+        if not self.path or self.index >= len(self.path):
+            return True  # treat as error → trigger re-plan
 
-    def error(self, realState):
         # realState [x, y, theta]
         rx, ry, rtheta = realState
 
@@ -105,4 +111,4 @@ class MainPathPlaning:
         errTheta = np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)
 
         self.index += 1
-        return [errPos, errTheta]
+        return epsilon <= np.sqrt(errPos**2 + errTheta**2)

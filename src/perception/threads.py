@@ -1,9 +1,12 @@
 from PyQt6.QtGui import QImage
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 import cv2
+import time
+import asyncio
 
 from localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
+from forklift_control import ForkliftClient
 
 
 class PerceptionThread(QThread):
@@ -22,6 +25,16 @@ class PerceptionThread(QThread):
         self.override = False
         self.go = False
 
+        # Path planing mandatory porameters
+        self.mainPathPlaning = (
+            MainPathPlaning()
+        )  # some parameters are needed to change as needed
+        self.epsilon = 1  # Max error of theta + position
+        self.dt = 1  # Time interval of path planing
+        self.stateSpace = [10, 10]  # This defimes max dimensions of povements [x y]
+        self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
+        self.lastTime = None
+
     def run(self):
         camera = cv2.VideoCapture(0)
 
@@ -35,19 +48,76 @@ class PerceptionThread(QThread):
 
                 # Process Image (ArUco Detection)
                 corners, ids, rejected, annotated_frame = self.detector.detect_markers(
-                    color_frame)
-                img = self.detector.draw_markers(
-                    corners, ids, annotated_frame)
+                    color_frame
+                )
+                img = self.detector.draw_markers(corners, ids, annotated_frame)
 
-                if not self.override:
-
+                # Potencial error with corners because idk if it is [1 2 3 4 5 6 ..] or [[1 2..] [...]]
+                if not self.override and len(corners) >= 4:
                     #  Path Planning
+                    now = time.time()
+                    if self.lastTime is None or (now - self.lastTime) >= self.dt:
+                        self.lastTime = now
+
+                        realState = self.detector.get_position_simple(
+                            corners[:4]
+                        )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
+                        goalState = self.detector.get_position_simple(
+                            corners[4:]
+                        )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
+
+                        if self.mainPathPlaning is not None:
+                            # If error of real state and planed state >= epsilon -> replan
+                            if self.mainPathPlaning.error(2 * self.epsilon, realState):
+                                # stop movements
+                                asyncio.run(self.forklift.stop_steering())
+                                asyncio.run(self.forklift.stop_throttle())
+
+                                # replan
+                                self.mainPathPlaning.startPlaning(
+                                    self.dt,
+                                    realState,
+                                    goalState,
+                                    self.stateSpace,
+                                    self.epsilon,
+                                )
+
+                            elif not self.mainPathPlaning.path:
+                                # replan
+                                self.mainPathPlaning.startPlaning(
+                                    self.dt,
+                                    realState,
+                                    goalState,
+                                    self.stateSpace,
+                                    self.epsilon,
+                                )
+
+                        # Execute movements
+                        if self.mainPathPlaning.index < len(
+                            self.mainPathPlaning.actions
+                        ):
+                            # get actual action
+                            v, theta = self.mainPathPlaning.actions[
+                                self.mainPathPlaning.index
+                            ]
+
+                            # Execute actions
+                            asyncio.run(self.forklift.send_steering(theta))
+                            asyncio.run(self.forklift.send_throttle(-v))
 
                     #  Show Path Visualization if enabled
                     if self.show_path:
                         # Perform path planning logic here
                         # put text on the image to indicate path planning is active
-                        cv2.putText(img, "Path Planning Active", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        cv2.putText(
+                            img,
+                            "Path Planning Active",
+                            (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            1,
+                            (0, 255, 0),
+                            2,
+                        )
 
                         # print("Showing path - Add path planning logic here")
 
@@ -58,8 +128,9 @@ class PerceptionThread(QThread):
                 # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 h, w, ch = rgb_image.shape
-                qt_image = QImage(rgb_image.data, w, h, ch *
-                                    w, QImage.Format.Format_RGB888)
+                qt_image = QImage(
+                    rgb_image.data, w, h, ch * w, QImage.Format.Format_RGB888
+                )
                 self.new_frame_signal.emit(qt_image)
         finally:
             camera.release()
