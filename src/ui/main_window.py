@@ -1,14 +1,15 @@
-from PyQt6.QtGui import QImage
-from PyQt6.QtCore import QThread, pyqtSignal
-import sys
-import numpy as np
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QLabel, QPushButton,
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtWidgets import (QMainWindow, QLabel, QPushButton,
                              QVBoxLayout, QHBoxLayout, QWidget)
-from PyQt6.QtCore import QThread, pyqtSignal, Qt
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QPixmap
 
 
 class MainWindow(QMainWindow):
+
+    toggle_showPath_signal = pyqtSignal(bool)
+    go_signal = pyqtSignal(bool)
+    override_signal = pyqtSignal(bool)
+    manual_drive_signal = pyqtSignal(str, bool)
 
     def __init__(self):
         super().__init__()
@@ -24,10 +25,15 @@ class MainWindow(QMainWindow):
         self.btn_go = QPushButton("Go")
         self.btn_override = QPushButton("Override")
 
-        # Connect button signals to slots (dummy slots for now)
-        self.btn_showPath.clicked.connect(self.on_showPath_clicked)
-        self.btn_go.clicked.connect(self.on_go_clicked)
-        self.btn_override.clicked.connect(self.on_override_clicked)
+        # Connect button signals to slots
+        self.btn_showPath.setCheckable(True)
+        self.btn_showPath.clicked.connect(self._emit_toggle_showPath)
+
+        self.btn_go.setCheckable(True)
+        self.btn_go.clicked.connect(self._emit_go)
+
+        self.btn_override.setCheckable(True)
+        self.btn_override.clicked.connect(self._emit_override)
 
         # Setup Layouts
         vbox = QVBoxLayout()
@@ -47,11 +53,24 @@ class MainWindow(QMainWindow):
         """Slot that receives the QImage from the worker thread and updates the GUI."""
         self.image_label.setPixmap(QPixmap.fromImage(qt_image))
 
-    def on_showPath_clicked(self):
-        print("Show path button clicked - Add path visualization logic here")
+    def _emit_toggle_showPath(self, state):
+        print(f"Show path button clicked - State: {state}")
+        self.toggle_showPath_signal.emit(state)
 
-    def on_go_clicked(self):
-        print("Go button clicked - Add forklift movement logic here")
+    def _emit_go(self, state):
+        print(f"Go button clicked - State: {state}")
+        self.go_signal.emit(state)
 
-    def on_override_clicked(self):
-        print("Override button clicked - Add override logic here")
+    def _emit_override(self, state):
+        print(f"Override button clicked - State: {state}")
+        self.override_signal.emit(state)
+
+    def keyPressEvent(self, event):
+        """Capture key presses and emit signal if not auto-repeating"""
+        if not event.isAutoRepeat():
+            self.manual_drive_signal.emit(event.text().lower(), True)
+
+    def keyReleaseEvent(self, event):
+        """Capture key releases to stop movement"""
+        if not event.isAutoRepeat():
+            self.manual_drive_signal.emit(event.text().lower(), False)
