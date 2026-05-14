@@ -1,6 +1,6 @@
 import numpy as np
 
-from forklift_sim import ForkSim
+from pathPlaning_Astar.forklift_sim import ForkSim
 
 
 class Node:
