@@ -6,6 +6,12 @@ class WebsocketInterface:
         self.uri = uri
         self.websocket: Optional[websocket.WebSocket] = None
 
+        try:
+            self.open()
+        except Exception as e:
+            print(f"Failed to connect to websocket at {uri}: {e}")
+            self.websocket = None
+
     def open(self) -> None:
         """Open websocket connection if it is not already open."""
         if self.websocket is not None:
