@@ -3,6 +3,7 @@ from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 import cv2
 
 from localization import Detection
+from pathPlaning_Astar.PathMain import MainPathPlaning
 
 
 class PerceptionThread(QThread):

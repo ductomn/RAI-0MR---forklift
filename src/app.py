@@ -20,7 +20,7 @@ class AppController(QObject):
         
         self.gui = MainWindow()
         self.perception_thread = PerceptionThread()
-        # self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
+        self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
 
         # Route the image to the GUI
         self.perception_thread.new_frame_signal.connect(self.gui.display_image)
