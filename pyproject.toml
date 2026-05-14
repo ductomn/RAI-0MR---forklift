@@ -10,7 +10,7 @@ requires-python = ">=3.9.0"
 dependencies = [
     "pyserial",
     "asyncio",
-    "websockets",
+    "websocket-client",
     "opencv-python",
     "numpy",
     "depthai",

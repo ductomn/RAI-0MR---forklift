@@ -20,7 +20,10 @@ class AppController(QObject):
         
         self.gui = MainWindow()
         self.perception_thread = PerceptionThread()
-        self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
+            
+        uri = "ws://192.168.4.1/CarInput"
+        self.forklift = ForkliftClient(uri)
+        self.pressed_keys = set() # Track active keys
 
         # Route the image to the GUI
         self.perception_thread.new_frame_signal.connect(self.gui.display_image)
@@ -41,76 +44,61 @@ class AppController(QObject):
         if self.perception_thread.isRunning():
             self.perception_thread.stop()
 
-    @asyncSlot()
-    async def handle_autonomous_drive(self, commands):
+    def handle_autonomous_drive(self, commands):
         """This automatically triggers whenever the planner calculates a new move."""
         if "throttle" in commands:
-            await self.forklift.send_throttle(commands["throttle"])
+            self.forklift.send_throttle(commands["throttle"])
         if "steering" in commands:
-            await self.forklift.send_steering(commands["steering"])
+            self.forklift.send_steering(commands["steering"])
 
 
-    @asyncSlot(str, bool)
-    async def handle_manual_drive(self, key, is_pressed):
+    def handle_manual_drive(self, key, is_pressed):
         if not self.perception_thread.override:
             return
         
         print(f"Manual drive command received: {key} - {'Pressed' if is_pressed else 'Released'}")
 
-        # Map keys to forklift actions (matching your test_drive.py logic)
-        if key == 'w':
-            await self.forklift.send_throttle(-200 if is_pressed else 0)
-        elif key == 's':
-            await self.forklift.send_throttle(200 if is_pressed else 0)
-        elif key == 'a':
-            await self.forklift.send_steering(120 if is_pressed else 90)
-        elif key == 'd':
-            await self.forklift.send_steering(60 if is_pressed else 90)
+        if is_pressed:
+            self.pressed_keys.add(key)
+        else:
+            self.pressed_keys.discard(key)
 
+        # Throttle 
+        if key in ['w', 's']:
+            if 'w' in self.pressed_keys:
+                self.forklift.send_throttle(-200) 
+            elif 's' in self.pressed_keys:
+                self.forklift.send_throttle(200)  
+            else:
+                self.forklift.stop_throttle()     
 
-        # Alternative approach using a set to track pressed keys for smoother control (optional)
-        # # Update the set of pressed keys
-        # if is_pressed:
-        #     self.pressed_keys.add(key)
-        # else:
-        #     self.pressed_keys.discard(key)
-
-        # # Handle Throttle (W/S)
-        # if key in ['w', 's']:
-        #     if 'w' in self.pressed_keys:
-        #         await self.forklift.send_throttle(-200) # Forward
-        #     elif 's' in self.pressed_keys:
-        #         await self.forklift.send_throttle(200)  # Backward
-        #     else:
-        #         await self.forklift.stop_throttle()     # Stop
-
-        # # Handle Steering (A/D)
-        # elif key in ['a', 'd']:
-        #     if 'a' in self.pressed_keys:
-        #         await self.forklift.send_steering(120)  # Left
-        #     elif 'd' in self.pressed_keys:
-        #         await self.forklift.send_steering(60)   # Right
-        #     else:
-        #         await self.forklift.stop_steering()    # Straight
+        # Steering
+        elif key in ['a', 'd']:
+            if 'a' in self.pressed_keys:
+                self.forklift.send_steering(120)  
+            elif 'd' in self.pressed_keys:
+                self.forklift.send_steering(60)
+            else:
+                self.forklift.stop_steering()    
 
 
 if __name__ == '__main__':
-    # app = QApplication(sys.argv)
-    # controller = AppController()
-    # controller.gui.show()
-    # controller.perception_thread.start()
-    # sys.exit(app.exec())
-
     app = QApplication(sys.argv)
-    
-    # CRITICAL: Use qasync loop instead of app.exec()
-    # for proper async handling in PyQt6 (handle_manual_drive)
-    loop = qasync.QEventLoop(app)
-    asyncio.set_event_loop(loop)
-    
     controller = AppController()
     controller.gui.show()
     controller.perception_thread.start()
+    sys.exit(app.exec())
+
+    # app = QApplication(sys.argv)
     
-    with loop:
-        loop.run_forever()
+    # # CRITICAL: Use qasync loop instead of app.exec()
+    # # for proper async handling in PyQt6 (handle_manual_drive)
+    # loop = qasync.QEventLoop(app)
+    # asyncio.set_event_loop(loop)
+    
+    # controller = AppController()
+    # controller.gui.show()
+    # controller.perception_thread.start()
+    
+    # with loop:
+    #     loop.run_forever()

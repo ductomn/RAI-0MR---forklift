@@ -1,70 +1,69 @@
-import websockets
+import websocket  
 from typing import Optional
-
 
 class WebsocketInterface:
     def __init__(self, uri: str):
         self.uri = uri
-        self.websocket: Optional[websockets.ClientConnection] = None
+        self.websocket: Optional[websocket.WebSocket] = None
 
-    async def _connect(self) -> websockets.ClientConnection:
-        """Create a websocket connection for the configured URI."""
-        return await websockets.connect(self.uri)
-
-    async def open(self) -> None:
+    def open(self) -> None:
         """Open websocket connection if it is not already open."""
         if self.websocket is not None:
             print("Websocket already open.")
             return
 
-        self.websocket = await self._connect()
+        self.websocket = websocket.create_connection(self.uri)
         print("Websocket opened.")
 
-    async def close(self) -> None:
+    def close(self) -> None:
         """Close websocket connection if it is open."""
         if self.websocket is None:
             print("Websocket already closed.")
             return
 
-        await self.websocket.close()
+        self.websocket.close()
         self.websocket = None
         print("Websocket closed.")
 
-    async def send(self, message: str) -> None:
+    def send(self, message: str) -> None:
         """Send raw message over an already open connection."""
         if self.websocket is None:
-            raise RuntimeError(
-                "Websocket not open. Call open() first.")
+            raise RuntimeError("Websocket not open. Call open() first.")
 
-        await self.websocket.send(message)
+        self.websocket.send(message)
 
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.close()
+    def __enter__(self):
+        """Context manager support (synchronous)"""
+        self.open()
+        return self
+        
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
 
 
 class ForkliftClient(WebsocketInterface):
-    async def send_throttle(self, value: int) -> None:
+    def send_throttle(self, value: int) -> None:
         """Value should be between -255 and 255, where negative is forward."""
-        await self.send(f"throttle,{value}")
+        self.send(f"throttle,{value}")
 
-    async def stop_throttle(self) -> None:
-        await self.send_throttle(0)
+    def stop_throttle(self) -> None:
+        self.send_throttle(0)
 
-    async def send_steering(self, value: int) -> None:
+    def send_steering(self, value: int) -> None:
         """Value should be between 0 and 180, where 80-100 is straight. Under 80 is right, over 100 is left."""
-        await self.send(f"steering,{value}")
+        self.send(f"steering,{value}")
 
-    async def stop_steering(self) -> None:
-        await self.send_steering(90)
+    def stop_steering(self) -> None:
+        self.send_steering(90)
 
-    async def mastControl_up(self) -> None:
-        await self.send(f"mast,5")
+    def mastControl_up(self) -> None:
+        self.send("mast,5")
 
-    async def mastControl_down(self) -> None:
-        await self.send(f"mast,6")
+    def mastControl_down(self) -> None:
+        self.send("mast,6")
 
-    async def mastTilt_forward(self) -> None:
-        await self.send(f"mTilt,1")
+    def mastTilt_forward(self) -> None:
+        self.send("mTilt,1")
 
-    async def mastTilt_backward(self) -> None:
-        await self.send(f"mTilt,2")
+    def mastTilt_backward(self) -> None:
+        self.send("mTilt,2")
