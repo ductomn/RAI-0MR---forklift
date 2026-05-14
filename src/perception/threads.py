@@ -6,7 +6,6 @@ import asyncio
 
 from localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
-from forklift_control import ForkliftClient
 
 
 class PerceptionThread(QThread):
@@ -32,7 +31,6 @@ class PerceptionThread(QThread):
         self.epsilon = 1  # Max error of theta + position
         self.dt = 1  # Time interval of path planing
         self.stateSpace = [10, 10]  # This defimes max dimensions of povements [x y]
-        self.forklift = ForkliftClient("ws://192.168.4.1/CarInput")
         self.lastTime = None
 
     def run(self):
@@ -58,6 +56,7 @@ class PerceptionThread(QThread):
                     if self.lastTime is None or (now - self.lastTime) >= self.dt:
                         self.lastTime = now
 
+                        # TODO: use specific marker IDs to identify forklift and goal state, not based on order
                         realState = self.detector.get_position_simple(
                             corners[0]
                         )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
@@ -65,12 +64,13 @@ class PerceptionThread(QThread):
                             corners[1]
                         )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
 
+                        print(f"Real State: {realState}, Goal State: {goalState}")
+
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
                             if self.mainPathPlaning.error(2 * self.epsilon, realState):
                                 # stop movements
-                                asyncio.run(self.forklift.stop_steering())
-                                asyncio.run(self.forklift.stop_throttle())
+                                # TODO: send stop command to forklift (with emit signal)
 
                                 # replan
                                 self.mainPathPlaning.startPlaning(
@@ -101,8 +101,7 @@ class PerceptionThread(QThread):
                             ]
 
                             # Execute actions
-                            asyncio.run(self.forklift.send_steering(theta))
-                            asyncio.run(self.forklift.send_throttle(-v))
+                            # TODO: send drive commands to forklift (with emit signal)
 
                     #  Show Path Visualization if enabled
                     if self.show_path:

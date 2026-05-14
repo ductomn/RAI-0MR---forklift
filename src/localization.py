@@ -63,48 +63,49 @@ class Detection:
         output_image = cv2.aruco.drawDetectedMarkers(frame, corners, ids)
         return output_image
 
-    def get_angle(self, corners):
+    def get_angle(self, corners_1set):
         """
-        Calculate the orientation angle in 2D
+        Calculate the orientation angle of the SINGLE passed marker in 2D
 
-        This is a simplified approach that only considers the first two corners of the marker.
+        This is a simplified approach that only considers the first two corners_1set of the marker.
         For more accurate 3D pose estimation, use get_pose
         """
-        marker = corners[0][0]
-        print(f"marker: {marker}")
+        marker = corners_1set[0]
+        # print(f"marker: {marker}")
 
         angle = -math.atan2(marker[1][1] - marker[0]
                             [1], marker[1][0] - marker[0][0])
-        print(f"Orientation (angle in radians): {angle} radians")
         angle_deg = math.degrees(angle)
-        print(f"Orientation (angle): {angle_deg} degrees")
+
+        # print(f"Orientation (angle in radians): {angle} radians")
+        # print(f"Orientation (angle): {angle_deg} degrees")
 
         return angle_deg
     
-    def get_center(self, corners):
+    def get_center(self, corners_1set):
         """
-        Calculate the center point of the marker in 2D
+        Calculate the center point of the SINGLE passed marker in 2D
 
-        This is a simplified approach that only considers the first two corners of the marker.
+        This is a simplified approach that only considers the first two corners_1set of the marker.
         For more accurate 3D pose estimation, use get_pose
         """
-        marker = corners[0][0]
-        print(f"marker: {marker}")
+        marker = corners_1set[0]
+        # print(f"marker: {marker}")
 
         # Calculate the center point of the marker
         center_x = (marker[0][0] + marker[1][0] + marker[2][0] + marker[3][0]) / 4
         center_y = (marker[0][1] + marker[1][1] + marker[2][1] + marker[3][1]) / 4
-        print(f"Center (x, y): ({center_x}, {center_y})")
+        # print(f"Center (x, y): ({center_x}, {center_y})")
 
         return center_x, center_y
     
-    def get_position_simple(self, corners):
+    def get_position_simple(self, corners_1set):
         """
         Simple position (center) and orientation (angle) estimation in 2D
         """
 
-        center_x, center_y = self.get_center(corners)
-        angle_deg = self.get_angle(corners)
+        center_x, center_y = self.get_center(corners_1set)
+        angle_deg = self.get_angle(corners_1set)
 
         return [center_x, center_y, angle_deg]
 
