@@ -52,18 +52,17 @@ class PerceptionThread(QThread):
                 )
                 img = self.detector.draw_markers(corners, ids, annotated_frame)
 
-                # Potencial error with corners because idk if it is [1 2 3 4 5 6 ..] or [[1 2..] [...]]
-                if not self.override and len(corners) >= 4:
+                if not self.override and len(corners) >= 2:
                     #  Path Planning
                     now = time.time()
                     if self.lastTime is None or (now - self.lastTime) >= self.dt:
                         self.lastTime = now
 
                         realState = self.detector.get_position_simple(
-                            corners[:4]
+                            corners[0]
                         )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
                         goalState = self.detector.get_position_simple(
-                            corners[4:]
+                            corners[1]
                         )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
 
                         if self.mainPathPlaning is not None:
