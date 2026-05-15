@@ -2,10 +2,12 @@ from PyQt6.QtGui import QImage
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 import cv2
 import time
+import math
 import asyncio
 
 from localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
+from forklift_control import ForkliftClient
 
 
 class PerceptionThread(QThread):
@@ -15,7 +17,7 @@ class PerceptionThread(QThread):
     # Signal 2: Sends a dictionary (or tuple) of driving commands to the Controller
     drive_command_signal = pyqtSignal(dict)
 
-    def __init__(self):
+    def __init__(self, forklift: ForkliftClient):
         super().__init__()
         self._run_flag = True
         self.detector = Detection(cv2.aruco.DICT_4X4_100)
@@ -23,14 +25,15 @@ class PerceptionThread(QThread):
         self.show_path = False
         self.override = False
         self.go = False
+        self.forklift: ForkliftClient = forklift  # passed class for controll
 
         # Path planing mandatory porameters
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
         self.epsilon = 1  # Max error of theta + position
-        self.dt = 1  # Time interval of path planing
-        self.stateSpace = [10, 10]  # This defimes max dimensions of povements [x y]
+        self.dt = 5  # Time interval of path planing
+        self.stateSpace = [600, 400]  # This defimes max dimensions of povements [x y]
         self.lastTime = None
 
     def run(self):
@@ -45,7 +48,7 @@ class PerceptionThread(QThread):
                     continue
 
                 # Process Image (ArUco Detection)
-                corners, ids, rejected, annotated_frame = self.detector.detect_markers(
+                corners, ids, _, annotated_frame = self.detector.detect_markers(
                     color_frame
                 )
                 img = self.detector.draw_markers(corners, ids, annotated_frame)
@@ -56,21 +59,19 @@ class PerceptionThread(QThread):
                     if self.lastTime is None or (now - self.lastTime) >= self.dt:
                         self.lastTime = now
 
-                        # TODO: use specific marker IDs to identify forklift and goal state, not based on order
-                        realState = self.detector.get_position_simple(
-                            corners[0]
-                        )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
-                        goalState = self.detector.get_position_simple(
-                            corners[1]
-                        )  # TODO check if corners are indexed like this -> 1. forklift and 2. goalState
+                        # get real states in order as defined in detect_markers
+                        realState = self.detector.get_position_simple(corners[0])
+                        goalState = self.detector.get_position_simple(corners[1])
 
-                        print(f"Real State: {realState}, Goal State: {goalState}")
+                        # print(f"Real State: {realState}, Goal State: {goalState}")
 
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
                             if self.mainPathPlaning.error(2 * self.epsilon, realState):
                                 # stop movements
                                 # TODO: send stop command to forklift (with emit signal)
+                                self.forklift.stop_steering()
+                                self.forklift.stop_throttle()
 
                                 # replan
                                 self.mainPathPlaning.startPlaning(
@@ -80,48 +81,74 @@ class PerceptionThread(QThread):
                                     self.stateSpace,
                                     self.epsilon,
                                 )
-
-                            elif not self.mainPathPlaning.path:
-                                # replan
-                                self.mainPathPlaning.startPlaning(
-                                    self.dt,
-                                    realState,
-                                    goalState,
-                                    self.stateSpace,
-                                    self.epsilon,
-                                )
+                                # Good path
+                                # print("path found")
+                                # print(self.mainPathPlaning.path)
 
                         # Execute movements
                         if self.mainPathPlaning.index < len(
                             self.mainPathPlaning.actions
                         ):
                             # get actual action
-                            v, theta = self.mainPathPlaning.actions[
+                            v, steer = self.mainPathPlaning.actions[
                                 self.mainPathPlaning.index
                             ]
 
                             # Execute actions
-                            # TODO: send drive commands to forklift (with emit signal)
+                            self.forklift.send_steering(steer)
+                            self.forklift.send_throttle(-v * 10)
 
-                    #  Show Path Visualization if enabled
-                    if self.show_path:
-                        # Perform path planning logic here
-                        # put text on the image to indicate path planning is active
-                        cv2.putText(
+                #  Show Path Visualization if enabled
+                if self.show_path and not self.override and self.mainPathPlaning.path:
+                    # Perform path planning logic here -> 'no' ps.DC
+                    # put text on the image to indicate path planning is active
+                    cv2.putText(
+                        img,
+                        "Path Planning Active",
+                        (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 255, 0),
+                        2,
+                    )
+
+                    # print("Showing path - Add path planning logic here")
+                    for i in range(len(self.mainPathPlaning.path)):
+                        x, y, theta = self.mainPathPlaning.path[i]
+
+                        # convert float -> int pixels
+                        pos = (int(x), int(y))
+
+                        # draw
+                        cv2.circle(img, pos, 5, (0, 0, 255), -1)
+
+                        arrow = 10
+                        end_x = int(x + arrow * math.cos(theta))
+                        end_y = int(y + arrow * math.sin(theta))
+
+                        cv2.arrowedLine(
                             img,
-                            "Path Planning Active",
-                            (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            1,
-                            (0, 255, 0),
+                            pos,
+                            (end_x, end_y),
+                            (255, 0, 0),  # blue
                             2,
                         )
 
-                        # print("Showing path - Add path planning logic here")
+                        # Draw line to next point
+                        if i < len(self.mainPathPlaning.path) - 1:
+                            x2, y2, _ = self.mainPathPlaning.path[i + 1]
 
-                    # # Emit Control Commands to the Forklift
-                    # if self.go and commands:
-                    #     self.drive_command_signal.emit(commands)
+                            cv2.line(
+                                img,
+                                pos,
+                                (int(x2), int(y2)),
+                                (0, 255, 0),  # green
+                                2,
+                            )
+
+                # # Emit Control Commands to the Forklift
+                # if self.go and commands:
+                #     self.drive_command_signal.emit(commands)
 
                 # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
