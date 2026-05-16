@@ -3,7 +3,7 @@ from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 import cv2
 import time
 import math
-import asyncio
+import numpy as np
 
 from localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
@@ -17,7 +17,7 @@ class PerceptionThread(QThread):
     # Signal 2: Sends a dictionary (or tuple) of driving commands to the Controller
     drive_command_signal = pyqtSignal(dict)
 
-    def __init__(self, forklift: ForkliftClient = None):
+    def __init__(self, forklift: ForkliftClient):
         super().__init__()
         self._run_flag = True
         self.detector = Detection(cv2.aruco.DICT_4X4_100)
@@ -31,7 +31,7 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 1  # Max error of theta + position
+        self.epsilon = 10  # Max error of theta + position
         self.dt = 5  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of povements [x y]
         self.lastTime = None
@@ -69,8 +69,8 @@ class PerceptionThread(QThread):
                             # If error of real state and planed state >= epsilon -> replan
                             if self.mainPathPlaning.error(2 * self.epsilon, realState):
                                 # stop movements
-                                # TODO: send stop command to forklift (with emit signal)
                                 self.forklift.stop_steering()
+                                time.sleep(0.1)
                                 self.forklift.stop_throttle()
 
                                 # replan
@@ -94,10 +94,13 @@ class PerceptionThread(QThread):
                                 self.mainPathPlaning.index
                             ]
 
-                            print(f"Executing action: v={v}, steer={steer}, int_v={int(v * 10)}")
+                            # print(
+                            #     f"Executing action: v={v}, steer={steer}, int_v={int(v * 10)}"
+                            # )
 
                             # Execute actions
-                            self.forklift.send_steering(steer)
+                            self.forklift.send_steering(int(np.rad2deg(steer)) + 90)
+                            time.sleep(0.1)
                             self.forklift.send_throttle(int(-v * 10))
 
                 #  Show Path Visualization if enabled

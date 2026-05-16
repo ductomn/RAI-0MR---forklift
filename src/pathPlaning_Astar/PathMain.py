@@ -9,7 +9,7 @@ class MainPathPlaning:
     def __init__(self):
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
-        self.index = 0  # this defines index of actual action that is processed
+        self.index = 1  # this defines index of actual action that is processed
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
     def startPlaning(self, dt, start, goal, stateSpace, tol):
@@ -17,7 +17,7 @@ class MainPathPlaning:
         v = 5  # mm/s
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
-        self.index = 0  # this defines index of actual action that is processed
+        self.index = 1  # this defines index of actual action that is processed
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
         avalibeActions = [
@@ -97,7 +97,7 @@ class MainPathPlaning:
         return (round(float(x), -1), round(float(y), -1), round(float(theta), 1))
 
     def error(self, epsilon, realState):
-        """ 
+        """
         This function checks if the real state is close enough to the planned "actual" state. NOT goal.
         """
         # check if empty
