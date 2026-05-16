@@ -7,9 +7,9 @@ from perception.threads import PerceptionThread
 from forklift_control import ForkliftClient
 
 # websocket debugging
-import websocket
+# import websocket
 
-websocket.enableTrace(True)
+# websocket.enableTrace(True)
 
 
 class AppController(QObject):
@@ -21,6 +21,7 @@ class AppController(QObject):
         # connect to forklift and pass conector
         uri = "ws://192.168.4.1/CarInput"
         self.forklift = ForkliftClient(uri)
+        # self.forklift = None  
         self.perception_thread = PerceptionThread(forklift=self.forklift)
 
         self.pressed_keys = set()  # Track active keys

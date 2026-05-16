@@ -97,6 +97,9 @@ class MainPathPlaning:
         return (round(float(x), -1), round(float(y), -1), round(float(theta), 1))
 
     def error(self, epsilon, realState):
+        """ 
+        This function checks if the real state is close enough to the planned "actual" state. NOT goal.
+        """
         # check if empty
         if not self.path or self.index >= len(self.path):
             return True  # treat as error → trigger re-plan

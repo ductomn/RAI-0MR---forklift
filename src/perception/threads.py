@@ -17,7 +17,7 @@ class PerceptionThread(QThread):
     # Signal 2: Sends a dictionary (or tuple) of driving commands to the Controller
     drive_command_signal = pyqtSignal(dict)
 
-    def __init__(self, forklift: ForkliftClient):
+    def __init__(self, forklift: ForkliftClient = None):
         super().__init__()
         self._run_flag = True
         self.detector = Detection(cv2.aruco.DICT_4X4_100)
@@ -94,9 +94,11 @@ class PerceptionThread(QThread):
                                 self.mainPathPlaning.index
                             ]
 
+                            print(f"Executing action: v={v}, steer={steer}, int_v={int(v * 10)}")
+
                             # Execute actions
                             self.forklift.send_steering(steer)
-                            self.forklift.send_throttle(-v * 10)
+                            self.forklift.send_throttle(int(-v * 10))
 
                 #  Show Path Visualization if enabled
                 if self.show_path and not self.override and self.mainPathPlaning.path:
