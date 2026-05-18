@@ -29,6 +29,7 @@ class AppController(QObject):
         # Track current states to send only on change
         self.current_throttle = 0
         self.current_steering = 90
+        self.current_mast = 0
         self.direction_cooldown = 0
 
         # Timer to process continuous driving and prevent socket flooding
@@ -110,38 +111,42 @@ class AppController(QObject):
         elif "d" in self.pressed_keys:
             target_steering = 60
 
+        target_mast = 0
+        if "j" in self.pressed_keys:
+            target_mast = 6
+        elif "k" in self.pressed_keys:
+            target_mast = 5
+
         # Helper function to send and handle reconnects
-        def safe_send(action_type, target_val, current_val, send_func):
+        def check_send(action_type, target_val, current_val, send_func):
             if target_val != current_val:
                 try:
                     send_func(target_val)
                     return target_val
                 except Exception as e:
-                    print(f"Network error sending {action_type}: {e}")
-                    print("Attempting to reconnect to forklift...")
-                    try:
-                        self.forklift.close()
-                        self.forklift.open()
-                        send_func(target_val)
-                        return target_val
-                    except Exception as reconnect_error:
-                        print(f"Reconnect failed: {reconnect_error}")
-                        self.pressed_keys.clear()
+                    print(f"Error sending {action_type}: {e}")
+                    self.pressed_keys.clear()
             return current_val
 
-        self.current_throttle = safe_send(
+        self.current_throttle = check_send(
             "throttle",
             target_throttle,
             self.current_throttle,
             self.forklift.send_throttle,
         )
-        self.current_steering = safe_send(
+        self.current_steering = check_send(
             "steering",
             target_steering,
             self.current_steering,
             self.forklift.send_steering,
         )
-
+        
+        self.current_mast = check_send(
+            "mast",
+            target_mast,
+            self.current_mast,
+            self.forklift.mastControl
+        )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

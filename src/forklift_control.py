@@ -36,7 +36,26 @@ class WebsocketInterface:
         if self.websocket is None:
             raise RuntimeError("Websocket not open. Call open() first.")
 
-        self.websocket.send(message)
+        self.safe_send(message)
+
+    def safe_send(self, message: str) -> None:
+        """Send message with error handling and automatic reconnect."""
+        if self.websocket is None:
+            raise RuntimeError("Websocket not open. Call open() first.")
+
+        try:
+            self.websocket.send(message)
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            print("Attempting to reconnect...")
+            try:
+                self.close()
+                self.open()
+                self.websocket.send(message)
+                print("Message sent after reconnect.")
+            except Exception as reconnect_error:
+                print(f"Reconnect failed: {reconnect_error}")
+                raise RuntimeError("Failed to send message after reconnecting.") from reconnect_error
 
     def __enter__(self):
         """Context manager support (synchronous)"""
@@ -67,6 +86,20 @@ class ForkliftClient(WebsocketInterface):
 
     def mastControl_down(self) -> None:
         self.send("mast,6")
+    
+    def mastControl_stop(self) -> None:
+        self.send("mast,0")
+
+    def mastControl(self, value: int) -> None:
+        """Value should be 5 for up and 6 for down."""
+        if value == 5:
+            self.mastControl_up()
+        elif value == 6:
+            self.mastControl_down()
+        elif value == 0:
+            self.mastControl_stop()
+        else:
+            raise ValueError("Invalid mast control value. Use 5 for up and 6 for down.")
 
     def mastTilt_forward(self) -> None:
         self.send("mTilt,1")
