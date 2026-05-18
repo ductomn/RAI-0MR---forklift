@@ -21,10 +21,10 @@ class MainPathPlaning:
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
         avalibeActions = [
-            [v * 1.5, np.pi / 5],
+            [v * 1.5, np.pi / 6],
             [v * 1.5, np.pi / 8],
             [v * 2, 0],
-            [v * 1.5, -np.pi / 5],
+            [v * 1.5, -np.pi / 6],
             [v * 1.5, -np.pi / 8],
             [-v, np.pi / 5],
             [-v, 0],

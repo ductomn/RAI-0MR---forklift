@@ -121,6 +121,36 @@ class Detection:
         angle_deg = self.get_angle(corners_1set)
 
         return [center_x, center_y, angle_deg]
+    
+    def get_position_simple_mm(self, corners_1set, marker_size_mm):
+        marker = corners_1set[0]
+        center_x, center_y = self.get_center(corners_1set)
+        angle_deg = self.get_angle(corners_1set)
+        size_px = (math.sqrt((marker[0][0] - marker[1][0])**2 + (marker[0][1] - marker[1][1])**2)
+                    + math.sqrt((marker[1][0] - marker[2][0])**2 + (marker[1][1] - marker[2][1])**2)
+                    + math.sqrt((marker[2][0] - marker[3][0])**2 + (marker[2][1] - marker[3][1])**2)
+                    + math.sqrt((marker[3][0] - marker[0][0])**2 + (marker[3][1] - marker[0][1])**2)
+                    ) / 4  # Average size in pixels
+
+        px_mm = size_px / marker_size_mm
+        position_mm = [center_x // px_mm, center_y // px_mm, angle_deg]
+        return position_mm
+    
+    def resize_statespace_mm(corners, markersize, state_space):
+        size_px = 0
+        i = 0
+        for m in corners:
+            marker = m[0]
+            size_px = (math.sqrt((marker[0][0] - marker[1][0])**2 + (marker[0][1] - marker[1][1])**2)
+                    + math.sqrt((marker[1][0] - marker[2][0])**2 + (marker[1][1] - marker[2][1])**2)
+                    + math.sqrt((marker[2][0] - marker[3][0])**2 + (marker[2][1] - marker[3][1])**2)
+                    + math.sqrt((marker[3][0] - marker[0][0])**2 + (marker[3][1] - marker[0][1])**2)
+                    ) / 4  # Average size in pixels
+            i += 4
+        size_px = size_px / i
+        px_mm = size_px / markersize
+        state_space_mm = [state_space[0] // px_mm, state_space[1] // px_mm]
+        return state_space_mm
 
     def _rotation_matrix_to_euler_angles(self, rotation_matrix):
         sy = math.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)

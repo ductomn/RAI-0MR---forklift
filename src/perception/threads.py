@@ -63,9 +63,16 @@ class PerceptionThread(QThread):
                         self.lastTime = now
 
                         # get real states in order as defined in detect_markers
+
                         realState = self.detector.get_position_simple(corners[0])
                         goalState = self.detector.get_position_simple(corners[1])
 
+                        #get real states in mm
+
+                        #realState = self.detector.get_position_simple_mm(corners[0],100)
+                        #goalState = self.detector.get_position_simple_mm(corners[1],100)
+                        #resized_stateSpace = self.detector.resize_statespace_mm(corners, 100, self.stateSpace)
+                        
                         # print(f"Real State: {realState}, Goal State: {goalState}")
 
                         if self.mainPathPlaning is not None:
