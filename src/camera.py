@@ -66,4 +66,4 @@ class ImageProcessor:
         depth_frame = depth.getFrame()
         video_frame = video.getCvFrame()
         points_frame = points.getPoints()
-        return video_frame, depth_frame, points_frame
+        return video_frame #, depth_frame, points_frame

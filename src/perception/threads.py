@@ -4,6 +4,7 @@ import cv2
 import time
 import math
 import numpy as np
+import camera as cam
 
 from localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
@@ -27,7 +28,7 @@ class PerceptionThread(QThread):
         self.go = False
         self.forklift: ForkliftClient = forklift  # passed class for controll
 
-        # Path planing mandatory porameters
+        # Path planing mandatory parameters
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
@@ -37,19 +38,21 @@ class PerceptionThread(QThread):
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(0)
-
+        #camera = cv2.VideoCapture(0)
+        camera = cam.ImageProcessor(640, 480, 30)
+        camera.start()
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image
-                ret, color_frame = camera.read()
-                if not ret or color_frame is None:
+                #ret, color_frame = camera.read()
+                frame = camera.get_frames()
+                if not camera.is_running():
                     self.msleep(10)
                     continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(
-                    color_frame
+                    frame
                 )
                 img = self.detector.draw_markers(corners, ids, annotated_frame)
 
