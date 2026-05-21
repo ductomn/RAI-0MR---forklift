@@ -165,9 +165,9 @@ class PerceptionThread(QThread):
                                 2,
                             )
 
-                # # Emit Control Commands to the Forklift
-                # if self.go and commands:
-                #     self.drive_command_signal.emit(commands)
+                elif not self.override:
+                      self.forklift.stop_steering()
+                      self.forklift.stop_throttle()
 
                 # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
