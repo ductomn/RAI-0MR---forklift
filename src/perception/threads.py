@@ -32,9 +32,11 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 10  # Max error of theta + position
-        self.dt = 5  # Time interval of path planing
+        self.epsilon = 20  # Max error of theta + position
+        self.dt = 2  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of povements [x y]
+        self.markersize = 45  # This is the size of the ArUco marker in mm for real state estimation
+        self.px_mm = 0
         self.lastTime = None
 
     def run(self):
@@ -64,14 +66,14 @@ class PerceptionThread(QThread):
 
                         # get real states in order as defined in detect_markers
 
-                        realState = self.detector.get_position_simple(corners[0])
-                        goalState = self.detector.get_position_simple(corners[1])
+                        #realState = self.detector.get_position_simple(corners[0])
+                        #goalState = self.detector.get_position_simple(corners[1])
 
                         #get real states in mm
 
-                        #realState = self.detector.get_position_simple_mm(corners[0],100)
-                        #goalState = self.detector.get_position_simple_mm(corners[1],100)
-                        #resized_stateSpace = self.detector.resize_statespace_mm(corners, 100, self.stateSpace)
+                        realState = self.detector.get_position_simple_mm(corners[0],corners,self.markersize)
+                        goalState = self.detector.get_position_simple_mm(corners[1],corners,self.markersize)
+                        resized_stateSpace, self.px_mm = self.detector.resize_statespace_mm(corners, self.markersize, self.stateSpace)
                         
                         # print(f"Real State: {realState}, Goal State: {goalState}")
 
@@ -88,12 +90,12 @@ class PerceptionThread(QThread):
                                     self.dt,
                                     realState,
                                     goalState,
-                                    self.stateSpace,
+                                    resized_stateSpace,
                                     self.epsilon,
                                 )
                                 # Good path
-                                # print("path found")
-                                # print(self.mainPathPlaning.path)
+                                print("path found")
+                                print(self.mainPathPlaning.path)
 
                         # Execute movements
                         if self.mainPathPlaning.index < len(
@@ -111,7 +113,7 @@ class PerceptionThread(QThread):
                             # Execute actions
                             self.forklift.send_steering(int(np.rad2deg(steer)) + 90)
                             time.sleep(0.1)
-                            self.forklift.send_throttle(int(-v * 10))
+                            self.forklift.send_throttle(int(v * 0.617))
 
                 #  Show Path Visualization if enabled
                 if self.show_path and not self.override and self.mainPathPlaning.path:
@@ -130,7 +132,8 @@ class PerceptionThread(QThread):
                     # print("Showing path - Add path planning logic here")
                     for i in range(len(self.mainPathPlaning.path)):
                         x, y, theta = self.mainPathPlaning.path[i]
-
+                        x = int(x*self.px_mm)
+                        y = int(y*self.px_mm)
                         # convert float -> int pixels
                         pos = (int(x), int(y))
 
@@ -152,7 +155,8 @@ class PerceptionThread(QThread):
                         # Draw line to next point
                         if i < len(self.mainPathPlaning.path) - 1:
                             x2, y2, _ = self.mainPathPlaning.path[i + 1]
-
+                            x2 = int(x2*self.px_mm)
+                            y2 = int(y2*self.px_mm)
                             cv2.line(
                                 img,
                                 pos,
@@ -173,7 +177,7 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.release()
+            camera.stop()
 
     def stop(self):
         self._run_flag = False
