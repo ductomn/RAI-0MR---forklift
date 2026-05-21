@@ -36,3 +36,5 @@ Thumbs.db
 .coverage
 htmlcov/
 .black
+
+.cache
