@@ -21,8 +21,8 @@ class MainPathPlaning:
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
         avalibeActions = [
-            [v * 1.5, np.pi / 6],
-            [v * 1.5, np.pi / 8],
+            [v * 1.5, np.pi / 6],  # 30
+            [v * 1.5, np.pi / 8],  # 22,5 ==> 45 == 50
             [v * 2, 0],
             [v * 1.5, -np.pi / 6],
             [v * 1.5, -np.pi / 8],
@@ -93,8 +93,25 @@ class MainPathPlaning:
                     return
 
     def state_key(self, stateCheck):
+        # this function is only for unpacking states
         x, y, theta = stateCheck
         return (round(float(x), -1), round(float(y), -1), round(float(theta), 1))
+
+    def newGoalState(self, goalState):
+        # unpack states
+        x, y, theta = goalState
+
+        # define how mutch i want to move in mm
+        c = 100
+        # calculate change in mm
+        dx = c * np.cos(theta)
+        dy = c * np.sin(theta)
+
+        # add change to state
+        nx = x + dx
+        ny = y + dy
+
+        return [nx, ny, theta]
 
     def error(self, epsilon, realState):
         """

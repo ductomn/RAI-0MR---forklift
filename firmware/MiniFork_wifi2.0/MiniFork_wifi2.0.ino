@@ -62,9 +62,11 @@ void steeringControl(int steeringValue)
   steeringServoValue = steeringValue;
   steeringServo.write(steeringServoValue - steeringTrim);
   if (steeringServoValue > 100) {
-    steeringAdjustment = ((200 - steeringServoValue) / 100);
+    steeringAdjustment = ((200 - steeringServoValue) / 100.0);
   } else if (steeringServoValue < 80) {
-    steeringAdjustment = ((200 - (90 + (90 - steeringServoValue))) / 100);
+    steeringAdjustment = ((200 - (90 + (90 - steeringServoValue))) / 100.0);
+  } else {
+    steeringAdjustment = 1.0
   }
   processThrottle(throttleValue);
 }

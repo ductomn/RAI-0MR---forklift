@@ -35,13 +35,13 @@ class AstarHybrid:
         # calculate goal cost
         d = np.sqrt((x - gx) ** 2 + (y - gy) ** 2)
         t = np.abs((theta - gtheta + np.pi) % (2 * np.pi) - np.pi)
-        gCost = d + t * 0.5
+        gCost = d + t
 
         # calculate cost from start
         oldX, oldY, oldTheta = oldState
         ds = np.sqrt((x - oldX) ** 2 + (y - oldY) ** 2)
         ts = np.abs((theta - oldTheta + np.pi) % (2 * np.pi) - np.pi)
-        sCost = ds + ts * 0.5 + sCostOld
+        sCost = ds + ts + sCostOld
 
         # full cost
         fCost = sCost + gCost
