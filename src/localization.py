@@ -87,7 +87,7 @@ class Detection:
         marker = corners_1set[0]
         # print(f"marker: {marker}")
 
-        angle = -math.atan2(marker[1][1] - marker[0][1], marker[1][0] - marker[0][0])
+        angle = math.atan2(marker[1][1] - marker[0][1], marker[1][0] - marker[0][0])
         # angle_deg = math.degrees(angle)
 
         # print(f"Orientation (angle in radians): {angle} radians")
@@ -124,7 +124,7 @@ class Detection:
     
     def get_position_simple_mm(self, corners_1set, corners, markersize):
         center_x, center_y = self.get_center(corners_1set)
-        angle_deg = self.get_angle(corners_1set)
+        angle_rad = self.get_angle(corners_1set)
 
         size_px = 0
         i = 0
@@ -139,7 +139,7 @@ class Detection:
         size_px = size_px / i
         px_mm = size_px / markersize
 
-        return [center_x / px_mm, center_y / px_mm, angle_deg]
+        return [center_x / px_mm, (center_y * 2 - center_y) / px_mm, angle_rad]
     
     def resize_statespace_mm(self,corners, markersize, state_space):
         size_px = 0

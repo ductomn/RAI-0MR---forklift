@@ -35,13 +35,13 @@ class AstarHybrid:
         # calculate goal cost
         d = np.sqrt((x - gx) ** 2 + (y - gy) ** 2)
         t = np.abs((theta - gtheta + np.pi) % (2 * np.pi) - np.pi)
-        gCost = d + t
+        gCost = d + t * 10
 
         # calculate cost from start
         oldX, oldY, oldTheta = oldState
         ds = np.sqrt((x - oldX) ** 2 + (y - oldY) ** 2)
         ts = np.abs((theta - oldTheta + np.pi) % (2 * np.pi) - np.pi)
-        sCost = ds + ts + sCostOld
+        sCost = ds + ts * 10 + sCostOld
 
         # full cost
         fCost = sCost + gCost
@@ -61,7 +61,7 @@ class AstarHybrid:
         # calculate error
         d = np.sqrt((x - gx) ** 2 + (y - gy) ** 2)
         t = np.abs((theta - gtheta + np.pi) % (2 * np.pi) - np.pi)
-        error = d + t * 0.5
+        error = d + t * 10
         return error < tol
 
     def reconstructPath(self, goalNode):
