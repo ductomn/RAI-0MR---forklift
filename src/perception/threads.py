@@ -33,30 +33,32 @@ class PerceptionThread(QThread):
             MainPathPlaning()
         )  # some parameters are needed to change as needed
         self.epsilon = 20  # Max error of theta + position
-        self.dt = 2  # Time interval of path planing
+        self.dt = 0.5  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of povements [x y]
-        self.markersize = 45  # This is the size of the ArUco marker in mm for real state estimation
+        self.markersize = (
+            45  # This is the size of the ArUco marker in mm for real state estimation
+        )
         self.px_mm = 0
         self.lastTime = None
 
     def run(self):
-        #camera = cv2.VideoCapture(0)
-        camera = cam.ImageProcessor(640, 480, 30)
-        camera.start()
+        camera = cv2.VideoCapture(0)
+        # camera = cam.ImageProcessor(640, 480, 30)
+        # camera.start()
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image
-                #ret, color_frame = camera.read()
-                frame = camera.get_frames()
-                if not camera.is_running():
+                _, frame = camera.read()
+                # frame = camera.get_frames()
+                if not camera.isOpened():
                     self.msleep(10)
                     continue
 
                 # Process Image (ArUco Detection)
-                corners, ids, _, annotated_frame = self.detector.detect_markers(
-                    frame
-                )
+                corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
                 img = self.detector.draw_markers(corners, ids, annotated_frame)
+                frameHeight = frame.shape[0]
+                goalState = None
 
                 if not self.override and len(corners) >= 2:
                     #  Path Planning
@@ -64,22 +66,30 @@ class PerceptionThread(QThread):
                     if self.lastTime is None or (now - self.lastTime) >= self.dt:
                         self.lastTime = now
 
-                        # get real states in order as defined in detect_markers
+                        # get real states in mm
+                        realState = self.detector.get_position_simple_mm(
+                            corners[0], corners, self.markersize, frameHeight
+                        )
+                        goalState = self.detector.get_position_simple_mm(
+                            corners[1], corners, self.markersize, frameHeight
+                        )
+                        goalState = self.mainPathPlaning.newGoalState(goalState)
+                        resized_stateSpace, self.px_mm = (
+                            self.detector.resize_statespace_mm(
+                                corners, self.markersize, self.stateSpace
+                            )
+                        )
 
-                        #realState = self.detector.get_position_simple(corners[0])
-                        #goalState = self.detector.get_position_simple(corners[1])
+                        self.mainPathPlaning.inGoal(self.epsilon, realState, goalState)
 
-                        #get real states in mm
-
-                        realState = self.detector.get_position_simple_mm(corners[0],corners,self.markersize)
-                        goalState = self.detector.get_position_simple_mm(corners[1],corners,self.markersize)
-                        resized_stateSpace, self.px_mm = self.detector.resize_statespace_mm(corners, self.markersize, self.stateSpace)
-                        
                         # print(f"Real State: {realState}, Goal State: {goalState}")
 
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
-                            if self.mainPathPlaning.error(2 * self.epsilon, realState):
+                            if (
+                                self.mainPathPlaning.error(2 * self.epsilon, realState)
+                                and not self.mainPathPlaning.goalReached
+                            ):
                                 # stop movements
                                 self.forklift.stop_steering()
                                 time.sleep(0.1)
@@ -94,26 +104,35 @@ class PerceptionThread(QThread):
                                     self.epsilon,
                                 )
                                 # Good path
-                                print("path found")
-                                print(self.mainPathPlaning.path)
+                                # print("path found")
+                                # print(self.mainPathPlaning.path)
 
                         # Execute movements
-                        if self.mainPathPlaning.index < len(
-                            self.mainPathPlaning.actions
+                        if (
+                            self.mainPathPlaning.index
+                            < len(self.mainPathPlaning.actions)
+                            and not self.mainPathPlaning.goalReached
                         ):
                             # get actual action
                             v, steer = self.mainPathPlaning.actions[
                                 self.mainPathPlaning.index
                             ]
 
-                            # print(
-                            #     f"Executing action: v={v}, steer={steer}, int_v={int(v * 10)}"
-                            # )
+                            print(
+                                f"Executing action: v={v}, steer={steer}, int_v={int(v * 0.617)}"
+                            )
 
                             # Execute actions
-                            self.forklift.send_steering(int(np.rad2deg(steer)) + 90)
+                            self.forklift.send_steering(
+                                int(np.rad2deg(steer) * 1.12) + 90
+                            )
                             time.sleep(0.1)
-                            self.forklift.send_throttle(int(v * 0.617))
+                            self.forklift.send_throttle(int(-v * 0.617))
+                        if self.mainPathPlaning.goalReached:
+                            # add here code after all movements were done
+                            self.forklift.send_steering(90)
+                            time.sleep(0.1)
+                            self.forklift.send_throttle(0)
 
                 #  Show Path Visualization if enabled
                 if self.show_path and not self.override and self.mainPathPlaning.path:
@@ -128,21 +147,28 @@ class PerceptionThread(QThread):
                         (0, 255, 0),
                         2,
                     )
+                    # if goalState is not None:
+                    # plot offset goal
+                    # gx, gy, _ = goalState
+                    # goalPos = [gx, gy]
+                    # cv2.circle(img, goalPos, 5, (0, 0, 255), -1)
 
                     # print("Showing path - Add path planning logic here")
                     for i in range(len(self.mainPathPlaning.path)):
                         x, y, theta = self.mainPathPlaning.path[i]
-                        x = int(x*self.px_mm)
-                        y = int(y*self.px_mm)
+                        x_px = int(x * self.px_mm)
+                        y_px = int(
+                            frameHeight - y * self.px_mm
+                        )  # flip Y back to pixel space
                         # convert float -> int pixels
-                        pos = (int(x), int(y))
+                        pos = (x_px, y_px)
 
                         # draw
                         cv2.circle(img, pos, 5, (0, 0, 255), -1)
 
                         arrow = 10
-                        end_x = int(x + arrow * math.cos(theta))
-                        end_y = int(y + arrow * math.sin(theta))
+                        end_x = int(x_px + arrow * math.cos(theta))
+                        end_y = int(y_px - arrow * math.sin(theta))
 
                         cv2.arrowedLine(
                             img,
@@ -155,8 +181,8 @@ class PerceptionThread(QThread):
                         # Draw line to next point
                         if i < len(self.mainPathPlaning.path) - 1:
                             x2, y2, _ = self.mainPathPlaning.path[i + 1]
-                            x2 = int(x2*self.px_mm)
-                            y2 = int(y2*self.px_mm)
+                            x2 = int(x2 * self.px_mm)
+                            y2 = int(frameHeight - y2 * self.px_mm)
                             cv2.line(
                                 img,
                                 pos,
@@ -166,8 +192,8 @@ class PerceptionThread(QThread):
                             )
 
                 elif not self.override:
-                      self.forklift.stop_steering()
-                      self.forklift.stop_throttle()
+                    self.forklift.stop_steering()
+                    self.forklift.stop_throttle()
 
                 # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -177,7 +203,7 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.stop()
+            camera.release()
 
     def stop(self):
         self._run_flag = False

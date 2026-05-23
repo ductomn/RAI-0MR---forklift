@@ -80,9 +80,9 @@ class AppController(QObject):
 
         raw_target_throttle = 0
         if "w" in self.pressed_keys:
-            raw_target_throttle = -200
-        elif "s" in self.pressed_keys:
             raw_target_throttle = 200
+        elif "s" in self.pressed_keys:
+            raw_target_throttle = -200
 
         # Safety logic: Prevent instant direction changes
         target_throttle = raw_target_throttle
