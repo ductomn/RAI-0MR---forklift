@@ -1,6 +1,6 @@
 import numpy as np
 
-from pathPlaning_Astar.forklift_sim import ForkSim
+from pathPlaning.forklift_sim import ForkSim
 
 class AstarHybrid:
     def __init__(self, dt, avalibeActions, goal, stateSpace):
