@@ -151,11 +151,6 @@ class PerceptionThread(QThread):
                         (0, 255, 0),
                         2,
                     )
-                    # if goalState is not None:
-                    # plot offset goal
-                    # gx, gy, _ = goalState
-                    # goalPos = [gx, gy]
-                    # cv2.circle(img, goalPos, 5, (0, 0, 255), -1)
 
                     # print("Showing path - Add path planning logic here")
                     for i in range(len(self.mainPathPlaning.path)):
