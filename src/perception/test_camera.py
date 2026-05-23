@@ -5,12 +5,10 @@ detector = cam.Detection(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_10
 img = cam.ImageProcessor(640, 480, 5)
 img.start()
 while img.is_running():
-    video, depth, points = img.get_frames()
-    cv2.imshow("disparity", depth)
+    video = img.get_frames()
     
-    [corners, ids, rejected] = detector.detect_markers(video)
+    [corners, ids, _] = detector.detect_markers(video)
     video = detector.draw_markers(corners, ids, video)
-    #print(points[corners[0][0][0], corners[0][0][1]])
     print("fsxgfhn")
 
     cv2.imshow("video", video)

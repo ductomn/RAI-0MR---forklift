@@ -6,11 +6,6 @@ from ui.main_window import MainWindow
 from perception.threads import PerceptionThread
 from drive.forklift_control import ForkliftClient
 
-# websocket debugging
-# import websocket
-
-# websocket.enableTrace(True)
-
 
 class AppController(QObject):
     def __init__(self):
@@ -21,7 +16,6 @@ class AppController(QObject):
         # connect to forklift and pass conector
         uri = "ws://192.168.4.1/CarInput"
         self.forklift = ForkliftClient(uri)
-        # self.forklift = None  
         self.perception_thread = PerceptionThread(forklift=self.forklift)
 
         self.pressed_keys = set()  # Track active keys
@@ -40,9 +34,6 @@ class AppController(QObject):
         # Route the image to the GUI
         self.perception_thread.new_frame_signal.connect(self.gui.display_image)
 
-        # Route the math to the hardware via qasync
-        # self.perception_thread.drive_command_signal.connect(self.handle_autonomous_drive)
-
         self.gui.toggle_showPath_signal.connect(self.perception_thread.toggle_showPath)
         self.gui.go_signal.connect(self.perception_thread.toggle_go)
         self.gui.override_signal.connect(self.perception_thread.toggle_override)
@@ -56,13 +47,6 @@ class AppController(QObject):
         if self.perception_thread.isRunning():
             self.perception_thread.stop()
         self.control_timer.stop()
-
-    def handle_autonomous_drive(self, commands):
-        """This automatically triggers whenever the planner calculates a new move."""
-        if "throttle" in commands:
-            self.forklift.send_throttle(commands["throttle"])
-        if "steering" in commands:
-            self.forklift.send_steering(commands["steering"])
 
     def handle_manual_drive(self, key, is_pressed):
         if not self.perception_thread.override:
@@ -140,13 +124,14 @@ class AppController(QObject):
             self.current_steering,
             self.forklift.send_steering,
         )
-        
+
         self.current_mast = check_send(
             "mast",
             target_mast,
             self.current_mast,
-            self.forklift.mastControl
+            self.forklift.mastControl,
         )
+
 
 def main():
     app = QApplication(sys.argv)
@@ -154,6 +139,7 @@ def main():
     controller.gui.show()
     controller.perception_thread.start()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

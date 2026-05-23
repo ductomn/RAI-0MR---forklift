@@ -15,9 +15,6 @@ class PerceptionThread(QThread):
     # Signal 1: Sends the annotated image to the GUI to be displayed
     new_frame_signal = pyqtSignal(QImage)
 
-    # Signal 2: Sends a dictionary (or tuple) of driving commands to the Controller
-    drive_command_signal = pyqtSignal(dict)
-
     def __init__(self, forklift: ForkliftClient):
         super().__init__()
         self._run_flag = True
@@ -61,7 +58,6 @@ class PerceptionThread(QThread):
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
                 img = self.detector.draw_markers(corners, ids, annotated_frame)
                 frameHeight = frame.shape[0]
-                goalState = None
 
                 if not self.override and len(corners) >= 2:
                     #  Path Planning

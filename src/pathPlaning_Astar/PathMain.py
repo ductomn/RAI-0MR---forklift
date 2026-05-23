@@ -10,7 +10,6 @@ class MainPathPlaning:
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
-        self.badPath = []  # Here is saved estimated path witch didnt came to the end
         self.goalReached = False  # am i in goal ? XD
 
     def startPlaning(self, dt, start, goal, stateSpace, tol):
@@ -19,7 +18,6 @@ class MainPathPlaning:
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
-        self.badPath = []  # Here is saved estimated path witch didnt came to the end
 
         avalibeActions = [
             [v * 1.5, np.pi / 6],  # 30
@@ -44,16 +42,16 @@ class MainPathPlaning:
         )
 
         # Init parameters needed for pathPlaning
-        open = []
+        open_set = []
         closed = set()
         open_visited = {}  # state_key
-        heapq.heappush(open, startNode)
+        heapq.heappush(open_set, startNode)
         i = 0
 
         # main path calculation loop
-        while open:
+        while open_set:
             # 1. select node
-            selectedNode = heapq.heappop(open)
+            selectedNode = heapq.heappop(open_set)
 
             #  ceckGoal
             if planer.checkGoal(tol, selectedNode):
@@ -86,11 +84,11 @@ class MainPathPlaning:
                 if key not in open_visited or newCost[2] < open_visited[key]:
                     i += 1
                     open_visited[key] = newCost[2]
-                    heapq.heappush(open, newNode)
+                    heapq.heappush(open_set, newNode)
 
                 # Stop if too long search
                 if i >= 1e5:
-                    self.badPath, self.actions = planer.reconstructPath(newNode)
+                    self.actions = planer.reconstructPath(newNode)[1]
                     return
 
     def state_key(self, stateCheck):
