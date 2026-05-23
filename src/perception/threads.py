@@ -115,6 +115,7 @@ class PerceptionThread(QThread):
                             self.mainPathPlaning.index
                             < len(self.mainPathPlaning.actions)
                             and not self.mainPathPlaning.goalReached
+                            and self.go
                         ):
                             # get actual action
                             v, steer = self.mainPathPlaning.actions[
@@ -194,7 +195,7 @@ class PerceptionThread(QThread):
                                 2,
                             )
 
-                elif not self.override:
+                if (not self.override and not self.go) or len(corners) < 2:
                     self.forklift.stop_steering()
                     self.forklift.stop_throttle()
 
