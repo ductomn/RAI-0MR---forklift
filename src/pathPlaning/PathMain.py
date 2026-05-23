@@ -1,7 +1,7 @@
 import numpy as np
 
 import heapq
-from pathPlaning_Astar.path_Search import AstarHybrid
+from pathPlaning.path_Search import AstarHybrid
 
 class Node:
     def __init__(self, cost, state, action, parent):
