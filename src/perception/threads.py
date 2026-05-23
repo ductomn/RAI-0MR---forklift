@@ -7,7 +7,7 @@ import numpy as np
 import perception.camera as cam
 
 from perception.localization import Detection
-from pathPlaning_Astar.PathMain import MainPathPlaning
+from pathPlaning.PathMain import MainPathPlaning
 from drive.forklift_control import ForkliftClient
 
 

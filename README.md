@@ -1,16 +1,14 @@
 hihihi
 
-Localizing position and angle based on Aruco markers (the detected corners have order numbers)
-
-Markers will be always be automatically detected
-Buttons
-    Show path (toggle)
-    Go
-    Override
-    Extra: choose path-planning algorithm
-
 To-Do
-    integration of everything together 
-    implement the buttons and their functions
-    implement forklift control with PC keyboard
-    implement forklift control through threads (PC path-planning)
+  DC :
+      case switch na menenie modov path planingu do treads
+      stop when in goal
+      ending sequence
+      optional tasks -> tilt in owerdrive, after opening app reconnect
+
+  Tom:
+      2.algoritmus
+
+  Kaja:
+      3. algoritnus
