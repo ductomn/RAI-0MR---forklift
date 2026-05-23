@@ -1,9 +1,17 @@
 import numpy as np
 
 import heapq
-from pathPlaning_Astar.path_Search import Node
 from pathPlaning_Astar.path_Search import AstarHybrid
 
+class Node:
+    def __init__(self, cost, state, action, parent):
+        self.state = state  # [x, y, theta]
+        self.action = action  # [v, fi]
+        self.cost = cost  # [costFromStart, costToGoal, fullCost]
+        self.parent = parent  # last node state from witch it was created
+
+    def __lt__(self, other):
+        return self.cost[2] < other.cost[2]  # compare cost
 
 class MainPathPlaning:
     def __init__(self):

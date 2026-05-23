@@ -2,18 +2,6 @@ import numpy as np
 
 from pathPlaning_Astar.forklift_sim import ForkSim
 
-
-class Node:
-    def __init__(self, cost, state, action, parent):
-        self.state = state  # [x, y, theta]
-        self.action = action  # [v, fi]
-        self.cost = cost  # [costFromStart, costToGoal, fullCost]
-        self.parent = parent  # last node state from witch it was created
-
-    def __lt__(self, other):
-        return self.cost[2] < other.cost[2]  # compare cost
-
-
 class AstarHybrid:
     def __init__(self, dt, avalibeActions, goal, stateSpace):
         self.dt = dt  # time period for 1 movement in s
