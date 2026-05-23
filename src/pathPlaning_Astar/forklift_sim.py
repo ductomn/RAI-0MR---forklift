@@ -22,7 +22,7 @@ class ForkSim:
         v = np.clip(v, -self.limV, self.limV)
 
         # Model sim movement
-        dtheta = -(v / self.L) * np.tan(fi)
+        dtheta = (v / self.L) * np.tan(fi)
         thetaNew = theta + dtheta * dt
 
         # Saturation of theta

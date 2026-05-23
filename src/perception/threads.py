@@ -42,15 +42,18 @@ class PerceptionThread(QThread):
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(0)
-        # camera = cam.ImageProcessor(640, 480, 30)
-        # camera.start()
+        # camera = cv2.VideoCapture(0)
+        camera = cam.ImageProcessor(640, 480, 30)
+        camera.start()
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image
-                _, frame = camera.read()
-                # frame = camera.get_frames()
-                if not camera.isOpened():
+                # _, frame = camera.read()
+                # if not camera.isOpened():
+                #     self.msleep(10)
+                #     continue
+                frame = camera.get_frames()
+                if not camera.is_running():
                     self.msleep(10)
                     continue
 
@@ -127,7 +130,7 @@ class PerceptionThread(QThread):
                                 int(np.rad2deg(steer) * 1.12) + 90
                             )
                             time.sleep(0.1)
-                            self.forklift.send_throttle(int(-v * 0.617))
+                            self.forklift.send_throttle(int(v * 0.617))
                         if self.mainPathPlaning.goalReached:
                             # add here code after all movements were done
                             self.forklift.send_steering(90)
@@ -203,7 +206,8 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.release()
+            # camera.release()
+            camera.stop()
 
     def stop(self):
         self._run_flag = False
