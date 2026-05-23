@@ -29,10 +29,18 @@ class ForkSim:
         thetaNew = (thetaNew + np.pi) % (2 * np.pi) - np.pi
 
         # calculate new position
-        dx = v * np.cos(thetaNew)
-        dy = v * np.sin(thetaNew)
+        if abs(fi) < 1e-5:  # Close enough to zero
+            xNew = x + v * np.cos(theta) * dt
+            yNew = y + v * np.sin(theta) * dt
+        else:
+            R = self.L / np.tan(fi)
+            xNew = x + R * (np.sin(thetaNew) - np.sin(theta))
+            yNew = y - R * (np.cos(thetaNew) - np.cos(theta))
 
-        xNew = x + dx * dt
-        yNew = y + dy * dt
+        # dx = v * np.cos(thetaNew)
+        # dy = v * np.sin(thetaNew)
+
+        # xNew = x + dx * dt
+        # yNew = y + dy * dt
 
         return np.array([xNew, yNew, thetaNew])

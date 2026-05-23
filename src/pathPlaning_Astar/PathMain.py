@@ -11,10 +11,11 @@ class MainPathPlaning:
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
         self.badPath = []  # Here is saved estimated path witch didnt came to the end
+        self.goalReached = False  # am i in goal ? XD
 
     def startPlaning(self, dt, start, goal, stateSpace, tol):
         # Reset
-        v = 50  # mm/s
+        v = 100  # mm/s
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
@@ -101,8 +102,8 @@ class MainPathPlaning:
         # unpack states
         x, y, theta = goalState
 
-        # define how mutch i want to move in mm
-        c = 100
+        # define how far i want to move in mm
+        c = -100
         # calculate change in mm
         dx = c * np.cos(theta)
         dy = c * np.sin(theta)
@@ -113,10 +114,23 @@ class MainPathPlaning:
 
         return [nx, ny, theta]
 
+    def inGoal(self, epsilon, realState, goalState):
+        # goal state
+        gx, gy, gtheta = goalState
+        # realState [x, y, theta]
+        rx, ry, rtheta = realState
+
+        # check if in goal
+        errPos = np.sqrt((rx - gx) ** 2 + (ry - gy) ** 2)
+        errTheta = (np.abs((rtheta - gtheta + np.pi) % (2 * np.pi) - np.pi)) * 10
+
+        return epsilon <= np.sqrt(errPos**2 + errTheta**2)
+
     def error(self, epsilon, realState):
         """
         This function checks if the real state is close enough to the planned "actual" state. NOT goal.
         """
+
         # check if empty
         if not self.path or self.index >= len(self.path):
             return True  # treat as error → trigger re-plan
@@ -129,7 +143,7 @@ class MainPathPlaning:
 
         # Calculate actual error
         errPos = np.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
-        errTheta = np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)
+        errTheta = (np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)) * 10
 
         self.index += 1
         return epsilon <= np.sqrt(errPos**2 + errTheta**2)
