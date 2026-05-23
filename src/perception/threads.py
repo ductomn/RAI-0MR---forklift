@@ -4,11 +4,11 @@ import cv2
 import time
 import math
 import numpy as np
-import camera as cam
+import perception.camera as cam
 
-from localization import Detection
+from perception.localization import Detection
 from pathPlaning_Astar.PathMain import MainPathPlaning
-from forklift_control import ForkliftClient
+from drive.forklift_control import ForkliftClient
 
 
 class PerceptionThread(QThread):

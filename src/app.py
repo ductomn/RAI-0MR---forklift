@@ -4,7 +4,7 @@ from PyQt6.QtCore import QObject, QTimer
 
 from ui.main_window import MainWindow
 from perception.threads import PerceptionThread
-from forklift_control import ForkliftClient
+from drive.forklift_control import ForkliftClient
 
 # websocket debugging
 # import websocket
@@ -148,23 +148,12 @@ class AppController(QObject):
             self.forklift.mastControl
         )
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     controller = AppController()
     controller.gui.show()
     controller.perception_thread.start()
     sys.exit(app.exec())
 
-    # app = QApplication(sys.argv)
-
-    # # CRITICAL: Use qasync loop instead of app.exec()
-    # # for proper async handling in PyQt6 (handle_manual_drive)
-    # loop = qasync.QEventLoop(app)
-    # asyncio.set_event_loop(loop)
-
-    # controller = AppController()
-    # controller.gui.show()
-    # controller.perception_thread.start()
-
-    # with loop:
-    #     loop.run_forever()
+if __name__ == "__main__":
+    main()

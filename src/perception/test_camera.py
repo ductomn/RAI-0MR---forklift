@@ -1,5 +1,5 @@
 import cv2
-import camera as cam
+import perception.camera as cam
 
 detector = cam.Detection(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100))
 img = cam.ImageProcessor(640, 480, 5)

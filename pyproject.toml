@@ -24,3 +24,6 @@ dev = [
     "pytest",
     "black",
 ]
+
+[project.scripts]
+forklift = "app:main"

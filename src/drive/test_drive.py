@@ -1,6 +1,6 @@
 import asyncio
 
-from forklift_control import ForkliftClient
+from drive.forklift_control import ForkliftClient
 
 
 async def test_forklift_sequence(websocket: ForkliftClient) -> None:

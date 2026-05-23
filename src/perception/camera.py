@@ -1,7 +1,7 @@
 import cv2
 import depthai as dai
 import numpy as np
-import localization as loc
+import perception.localization as loc
 
 class Detection:
     def __init__(self, dictionary):
