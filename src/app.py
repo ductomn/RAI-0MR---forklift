@@ -22,7 +22,7 @@ class AppController(QObject):
 
         # Track current states to send only on change
         self.current_throttle = 0
-        self.current_steering = 90
+        self.current_steering = 100
         self.current_mast = 0
         self.direction_cooldown = 0
 
@@ -89,17 +89,22 @@ class AppController(QObject):
                 self.direction_cooldown = 3
                 target_throttle = 0  # Force stop immediately
 
-        target_steering = 90
+        target_steering = 100
         if "a" in self.pressed_keys:
-            target_steering = 120
+            target_steering = 130
         elif "d" in self.pressed_keys:
-            target_steering = 60
+            target_steering = 70
 
         target_mast = 0
         if "j" in self.pressed_keys:
             target_mast = 6
         elif "k" in self.pressed_keys:
             target_mast = 5
+
+        if "h" in self.pressed_keys:
+            self.forklift.mastTilt_backward()
+        elif "l" in self.pressed_keys:
+            self.forklift.mastTilt_forward()
 
         # Helper function to send and handle reconnects
         def check_send(action_type, target_val, current_val, send_func):

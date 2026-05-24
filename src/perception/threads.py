@@ -24,35 +24,43 @@ class PerceptionThread(QThread):
         self.override = False
         self.go = False
         self.forklift: ForkliftClient = forklift  # passed class for controll
+        self.mode = 0  # Choose witch path planer i am using
+        self.pickUpDone = False
 
         # Path planing mandatory parameters
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
         self.epsilon = 20  # Max error of theta + position
-        self.dt = 0.5  # Time interval of path planing
-        self.stateSpace = [600, 400]  # This defimes max dimensions of povements [x y]
-        self.markersize = (
-            45  # This is the size of the ArUco marker in mm for real state estimation
-        )
+        self.dt = 1  # Time interval of path planing
+        self.stateSpace = [600, 400]  # This defimes max dimensions of movements [x y]
+        self.markersize = 45  # This is the size of the ArUco marker
         self.px_mm = 0
         self.lastTime = None
 
     def run(self):
-        # camera = cv2.VideoCapture(0)
-        camera = cam.ImageProcessor(640, 480, 30)
-        camera.start()
+        camera = cv2.VideoCapture(1)
+        # camera = cam.ImageProcessor(640, 480, 30)
+        # camera.start()
+
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image
-                # _, frame = camera.read()
-                # if not camera.isOpened():
-                #     self.msleep(10)
-                #     continue
-                frame = camera.get_frames()
-                if not camera.is_running():
+                _, frame = camera.read()
+                height, width = frame.shape[:2]
+                self.stateSpace = [width, height]
+
+                if not camera.isOpened():
                     self.msleep(10)
                     continue
+
+                # frame = camera.get_frames()
+                # height, width = frame.shape[:2]
+                # self.stateSpace = [width, height]
+                #
+                # if not camera.is_running():
+                #     self.msleep(10)
+                #     continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
@@ -79,7 +87,9 @@ class PerceptionThread(QThread):
                             )
                         )
 
-                        self.mainPathPlaning.inGoal(self.epsilon, realState, goalState)
+                        self.mainPathPlaning.inGoal(
+                            2 * self.epsilon, realState, goalState
+                        )
 
                         # print(f"Real State: {realState}, Goal State: {goalState}")
 
@@ -89,22 +99,9 @@ class PerceptionThread(QThread):
                                 self.mainPathPlaning.error(2 * self.epsilon, realState)
                                 and not self.mainPathPlaning.goalReached
                             ):
-                                # stop movements
-                                self.forklift.stop_steering()
-                                time.sleep(0.1)
-                                self.forklift.stop_throttle()
-
-                                # replan
-                                self.mainPathPlaning.startPlaning(
-                                    self.dt,
-                                    realState,
-                                    goalState,
-                                    resized_stateSpace,
-                                    self.epsilon,
+                                self.choosePathPlaner(
+                                    self.mode, realState, goalState, resized_stateSpace
                                 )
-                                # Good path
-                                # print("path found")
-                                # print(self.mainPathPlaning.path)
 
                         # Execute movements
                         if (
@@ -118,25 +115,23 @@ class PerceptionThread(QThread):
                                 self.mainPathPlaning.index
                             ]
 
-                            print(
-                                f"Executing action: v={v}, steer={steer}, int_v={int(v * 0.617)}"
-                            )
+                            # print(
+                            #     f"Executing action: v={v}, steer={steer}, int_v={int(v * 0.617)}"
+                            # )
 
                             # Execute actions
                             self.forklift.send_steering(
-                                int(np.rad2deg(steer) * 1.12) + 90
+                                int(np.rad2deg(steer) * 1.12) + 100
                             )
                             time.sleep(0.1)
                             self.forklift.send_throttle(int(v * 0.617))
-                        if self.mainPathPlaning.goalReached:
-                            # add here code after all movements were done
-                            self.forklift.send_steering(90)
-                            time.sleep(0.1)
-                            self.forklift.send_throttle(0)
+
+                        if self.mainPathPlaning.goalReached and not self.pickUpDone:
+                            # when in goal pick up pallet
+                            self.pickUpSeq()
 
                 #  Show Path Visualization if enabled
                 if self.show_path and not self.override and self.mainPathPlaning.path:
-                    # Perform path planning logic here -> 'no' ps.DC
                     # put text on the image to indicate path planning is active
                     cv2.putText(
                         img,
@@ -186,9 +181,13 @@ class PerceptionThread(QThread):
                                 2,
                             )
 
-                if (not self.override and not self.go) or len(corners) < 2:
+                if (not self.go) and not self.override:  # len(corners) < 2 or
                     self.forklift.stop_steering()
                     self.forklift.stop_throttle()
+
+                if self.override:
+                    self.pickUpDone = False
+                    self.mainPathPlaning.goalReached = False
 
                 # Convert annotated image to QImage and emit to GUI
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -198,8 +197,76 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            # camera.release()
-            camera.stop()
+            camera.release()
+            # camera.stop()
+
+    def choosePathPlaner(self, mode, realState, goalState, stateSpace):
+        # stop movements
+        self.forklift.stop_steering()
+        time.sleep(0.1)
+        self.forklift.stop_throttle()
+
+        # choose which path planer will be used
+        match mode:
+            case 0:
+                print("Replaning with A* hybrit (DC)")
+                # replan
+                self.mainPathPlaning.startPlaning(
+                    self.dt,
+                    realState,
+                    goalState,
+                    stateSpace,
+                    self.epsilon,
+                )
+
+            case 1:
+                print("Replaning with WHUt")
+
+            case 2:
+                print("Replaning with Whut")
+
+        # Good path
+        # print("path found")
+        # print(self.mainPathPlaning.path)
+
+    def pickUpSeq(self):
+        # Stop movements
+        self.forklift.stop_steering()
+        time.sleep(0.01)
+        self.forklift.stop_throttle()
+
+        print("goal reached")
+        time.sleep(2)
+
+        # 1. mast down and tilt forward
+        self.forklift.mastControl_down()
+        time.sleep(1)
+        self.forklift.mastControl_stop()
+        time.sleep(0.01)
+
+        for _ in range(20):
+            self.forklift.mastTilt_forward()
+            time.sleep(0.01)
+
+        # 2. start go forward
+        self.forklift.send_throttle(int(70 * 0.61))
+        time.sleep(2)
+
+        # 3. stop throttle and pick up pallet
+        self.forklift.stop_throttle()
+        time.sleep(0.01)
+
+        for _ in range(20):
+            self.forklift.mastTilt_backward()
+            time.sleep(0.01)
+
+        self.forklift.mastControl_up()
+        time.sleep(1)
+
+        # 4. stop mast
+        self.forklift.mastControl_stop()
+
+        self.pickUpDone = True
 
     def stop(self):
         self._run_flag = False

@@ -3,6 +3,7 @@ import numpy as np
 import heapq
 from pathPlaning.path_Search import AstarHybrid
 
+
 class Node:
     def __init__(self, cost, state, action, parent):
         self.state = state  # [x, y, theta]
@@ -12,6 +13,7 @@ class Node:
 
     def __lt__(self, other):
         return self.cost[2] < other.cost[2]  # compare cost
+
 
 class MainPathPlaning:
     def __init__(self):
@@ -65,6 +67,8 @@ class MainPathPlaning:
             if planer.checkGoal(tol, selectedNode):
                 self.path, self.actions = planer.reconstructPath(selectedNode)
                 return
+            elif planer.checkBoundaries(goal):
+                return
 
             closed.add(self.state_key(selectedNode.state))
 
@@ -109,7 +113,7 @@ class MainPathPlaning:
         x, y, theta = goalState
 
         # define how far i want to move in mm
-        c = -100
+        c = -250
         # calculate change in mm
         dx = c * np.cos(theta)
         dy = c * np.sin(theta)
@@ -130,7 +134,7 @@ class MainPathPlaning:
         errPos = np.sqrt((rx - gx) ** 2 + (ry - gy) ** 2)
         errTheta = (np.abs((rtheta - gtheta + np.pi) % (2 * np.pi) - np.pi)) * 10
 
-        return epsilon <= np.sqrt(errPos**2 + errTheta**2)
+        self.goalReached = epsilon >= np.sqrt(errPos**2 + errTheta**2)
 
     def error(self, epsilon, realState):
         """

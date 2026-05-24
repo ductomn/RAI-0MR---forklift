@@ -2,21 +2,29 @@ import cv2
 import perception.camera as cam
 
 detector = cam.Detection(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100))
-img = cam.ImageProcessor(640, 480, 5)
-img.start()
-while img.is_running():
-    video = img.get_frames()
-    
-    [corners, ids, _] = detector.detect_markers(video)
+
+img = cv2.VideoCapture(1)
+
+while img.isOpened():
+    ret, video = img.read()
+
+    if not ret:
+        break
+
+    corners, ids, _ = detector.detect_markers(video)
     video = detector.draw_markers(corners, ids, video)
-    print("fsxgfhn")
+
+    # print("fsxgfhn")
 
     cv2.imshow("video", video)
+
     key = cv2.waitKey(1)
-    
-    if key == ord('q'):
-        img.stop()
+
+    if key == ord("q"):
+        img.release()
         break
+
+cv2.destroyAllWindows()
 """
 # Create pipeline
 with dai.Pipeline() as pipeline:

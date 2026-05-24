@@ -2,9 +2,9 @@ hihihi
 
 To-Do
   DC :
-      case switch na menenie modov path planingu do treads
-      stop when in goal
-      ending sequence
+      Test => case switch na menenie modov path planingu do treads
+      Test => stop when in goal
+      Test => ending sequence
       optional tasks -> tilt in owerdrive, after opening app reconnect
 
   Tom:

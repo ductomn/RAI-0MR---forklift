@@ -1,5 +1,6 @@
-import websocket  
+import websocket
 from typing import Optional
+
 
 class WebsocketInterface:
     def __init__(self, uri: str):
@@ -55,13 +56,15 @@ class WebsocketInterface:
                 print("Message sent after reconnect.")
             except Exception as reconnect_error:
                 print(f"Reconnect failed: {reconnect_error}")
-                raise RuntimeError("Failed to send message after reconnecting.") from reconnect_error
+                raise RuntimeError(
+                    "Failed to send message after reconnecting."
+                ) from reconnect_error
 
     def __enter__(self):
         """Context manager support (synchronous)"""
         self.open()
         return self
-        
+
     def __exit__(self, exc_type, exc, tb):
         self.close()
 
@@ -86,7 +89,7 @@ class ForkliftClient(WebsocketInterface):
 
     def mastControl_down(self) -> None:
         self.send("mast,6")
-    
+
     def mastControl_stop(self) -> None:
         self.send("mast,0")
 
