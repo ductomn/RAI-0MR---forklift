@@ -31,15 +31,15 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 20  # Max error of theta + position
-        self.dt = 1  # Time interval of path planing
+        self.epsilon = 7  # Max error of theta + position
+        self.dt = 0.5  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of movements [x y]
         self.markersize = 45  # This is the size of the ArUco marker
         self.px_mm = 0
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(0)
         # camera = cam.ImageProcessor(640, 480, 30)
         # camera.start()
 
@@ -102,6 +102,7 @@ class PerceptionThread(QThread):
                                 self.choosePathPlaner(
                                     self.mode, realState, goalState, resized_stateSpace
                                 )
+                                now = time.time()  # start timer only after replan
 
                         # Execute movements
                         if (
