@@ -16,6 +16,7 @@ class AppController(QObject):
         # connect to forklift and pass conector
         uri = "ws://192.168.4.1/CarInput"
         self.forklift = ForkliftClient(uri)
+        # self.forklift = None  # For testing without forklift connection
         self.perception_thread = PerceptionThread(forklift=self.forklift)
 
         self.pressed_keys = set()  # Track active keys
