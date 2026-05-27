@@ -108,6 +108,7 @@ class PerceptionThread(QThread):
                                     self.mode, realState, goalState, resized_stateSpace
                                 )
                                 now = time.time()  # start timer only after replan
+                                self.lastTime = now
 
                         # Execute movements
                         if (
@@ -131,7 +132,7 @@ class PerceptionThread(QThread):
                                     int(np.rad2deg(steer) * 1.12) + 100
                                 )
                                 time.sleep(0.1)
-                                self.forklift.send_throttle(int(v * 0.617))
+                                self.forklift.send_throttle(int(v / 0.617))
 
                         if self.mainPathPlaning.goalReached and not self.pickUpDone:
                             # when in goal pick up pallet

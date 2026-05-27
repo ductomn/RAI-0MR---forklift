@@ -10,7 +10,7 @@ class Node:
         self.parent = parent 
 
 
-def distance(state1, state2, angle_scale=10):
+def distance(state1, state2, angle_scale=20):
     x1, y1, theta1 = state1
     x2, y2, theta2 = state2
 
@@ -22,7 +22,7 @@ def distance(state1, state2, angle_scale=10):
 
 
 class KinodynamicRRT:
-    def __init__(self, dt, avalibeActions, goal, stateSpace, maxIter=1200, goalBias=0.25):
+    def __init__(self, dt, avalibeActions, goal, stateSpace, maxIter=1000, goalBias=0.25):
         self.dt = dt # time period for 1 movement in s
         self.goal = goal # [x, y, fi]
         self.avalibeActions = avalibeActions  # [[v, fi] [action2]....]
@@ -76,6 +76,7 @@ class KinodynamicRRT:
         if best_goal_node.parent is not None and best_goal_distance < goal_tolerance * 2.5:
             return self.reconstructPath(best_goal_node)
 
+        print("Path not found")
         return [], []
 
     def sampleState(self):
