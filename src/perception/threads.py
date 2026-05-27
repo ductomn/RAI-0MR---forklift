@@ -8,6 +8,7 @@ import perception.camera as cam
 
 from perception.localization import Detection
 from pathPlaning.PathMain import MainPathPlaning
+# from pathPlaning.PathMainDijkstra import MainPathPlaning
 from drive.forklift_control import ForkliftClient
 
 
@@ -31,8 +32,9 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 7  # Max error of theta + position
-        self.dt = 0.5  # Time interval of path planing
+        self.epsilon = 10  # Max error of position
+        self.epsilonTheta = 0.7
+        self.dt = 0.2  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of movements [x y]
         self.markersize = 45  # This is the size of the ArUco marker
         self.px_mm = 0
@@ -93,15 +95,15 @@ class PerceptionThread(QThread):
                         )
 
                         self.mainPathPlaning.inGoal(
-                            2 * self.epsilon, realState, goalState
+                            self.epsilon, self.epsilonTheta, realState, goalState
                         )
 
-                        # print(f"Real State: {realState}, Goal State: {goalState}")
+                        #print(f"Real State: {realState}, Goal State: {goalState}")
 
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
                             if (
-                                self.mainPathPlaning.error(2 * self.epsilon, realState)
+                                self.mainPathPlaning.error(2 * self.epsilon,4 * self.epsilonTheta, realState)
                                 and not self.mainPathPlaning.goalReached
                             ):
                                 self.choosePathPlaner(
@@ -231,6 +233,7 @@ class PerceptionThread(QThread):
                     goalState,
                     stateSpace,
                     self.epsilon,
+                    self.epsilonTheta
                 )
 
             case 1:
@@ -248,8 +251,8 @@ class PerceptionThread(QThread):
                 print("Replaning with Whut")
 
         # Good path
-        # print("path found")
-        # print(self.mainPathPlaning.path)
+        print("path found")
+        print(self.mainPathPlaning.path)
 
     def pickUpSeq(self):
         # Stop movements

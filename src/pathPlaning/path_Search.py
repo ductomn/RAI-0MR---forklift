@@ -42,15 +42,15 @@ class AstarHybrid:
 
         return not (0 <= x <= bx and 0 <= y <= by)
 
-    def checkGoal(self, tol, node):
+    def checkGoal(self, tol, thetaTol, node):
         x, y, theta = node.state
         gx, gy, gtheta = self.goal
 
         # calculate error
-        d = np.sqrt((x - gx) ** 2 + (y - gy) ** 2)
-        t = np.abs((theta - gtheta + np.pi) % (2 * np.pi) - np.pi)
-        error = d + t * 10
-        return error < tol
+        dError = np.sqrt((x - gx) ** 2 + (y - gy) ** 2)
+        thError = np.abs((theta - gtheta + np.pi) % (2 * np.pi) - np.pi)
+        
+        return dError < tol and thError < thetaTol
 
     def reconstructPath(self, goalNode):
         path = []

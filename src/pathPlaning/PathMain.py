@@ -65,7 +65,7 @@ class MainPathPlaning:
             selectedNode = heapq.heappop(open_set)
 
             #  ceckGoal
-            if planer.checkGoal(tol, selectedNode):
+            if planer.checkGoal(tol, thetaTol, selectedNode):
                 self.path, self.actions = planer.reconstructPath(selectedNode)
                 return
             elif planer.checkBoundaries(goal):
@@ -123,7 +123,7 @@ class MainPathPlaning:
         x, y, theta = goalState
 
         # define how far i want to move in mm
-        c = -250
+        c = -200
         # calculate change in mm
         dx = c * np.cos(theta)
         dy = c * np.sin(theta)
@@ -134,7 +134,7 @@ class MainPathPlaning:
 
         return [nx, ny, theta]
 
-    def inGoal(self, epsilon, realState, goalState):
+    def inGoal(self, epsilon, epsilonTheta, realState, goalState):
         # goal state
         gx, gy, gtheta = goalState
         # realState [x, y, theta]
@@ -144,9 +144,9 @@ class MainPathPlaning:
         errPos = np.sqrt((rx - gx) ** 2 + (ry - gy) ** 2)
         errTheta = (np.abs((rtheta - gtheta + np.pi) % (2 * np.pi) - np.pi)) * 10
 
-        self.goalReached = epsilon >= np.sqrt(errPos**2 + errTheta**2)
+        self.goalReached = epsilon >= errPos and epsilonTheta >= errTheta
 
-    def error(self, epsilon, realState):
+    def error(self, epsilonPos, epsilonTheta, realState):
         """
         This function checks if the real state is close enough to the planned "actual" state. NOT goal.
         """
@@ -163,7 +163,7 @@ class MainPathPlaning:
 
         # Calculate actual error
         errPos = np.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
-        errTheta = (np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)) * 10
+        errTheta = (np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi))
 
         self.index += 1
-        return epsilon <= np.sqrt(errPos**2 + errTheta**2)
+        return epsilonPos <= errPos and epsilonTheta <= errTheta
