@@ -224,7 +224,7 @@ class PerceptionThread(QThread):
             case 0:
                 print("Replaning with A* hybrit (DC)")
                 # replan
-                self.mainPathPlaning.startPlaning(
+                self.mainPathPlaning.startAstarHybrid(
                     self.dt,
                     realState,
                     goalState,
@@ -233,7 +233,15 @@ class PerceptionThread(QThread):
                 )
 
             case 1:
-                print("Replaning with WHUt")
+                print("Replaning with Kinodynamic RRT")
+                # replan
+                self.mainPathPlaning.startKinodynamicRRT(
+                    self.dt,
+                    realState,
+                    goalState,
+                    stateSpace,
+                    self.epsilon,
+                )
 
             case 2:
                 print("Replaning with Whut")
