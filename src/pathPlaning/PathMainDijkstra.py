@@ -69,7 +69,7 @@ class MainPathPlaning:
 
     def startPlaning(self, dt, start, goal, stateSpace, dTol, thetaTol):
         # Reset
-        v = 90  # mm/s
+        v = 60  # mm/s
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed

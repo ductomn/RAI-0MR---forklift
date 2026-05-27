@@ -8,6 +8,7 @@ import perception.camera as cam
 
 from perception.localization import Detection
 from pathPlaning.PathMain import MainPathPlaning
+# from pathPlaning.PathMainDijkstra import MainPathPlaning
 from drive.forklift_control import ForkliftClient
 
 
@@ -31,9 +32,9 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 40  # Max error of position
-        self.epsilonTheta = 0.6
-        self.dt = 0.5  # Time interval of path planing
+        self.epsilon = 10  # Max error of position
+        self.epsilonTheta = 0.7
+        self.dt = 0.2  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of movements [x y]
         self.markersize = 45  # This is the size of the ArUco marker
         self.px_mm = 0
@@ -104,6 +105,7 @@ class PerceptionThread(QThread):
                                     self.mode, realState, goalState, resized_stateSpace
                                 )
                                 now = time.time()  # start timer only after replan
+                                self.lastTime = now
 
                         # Execute movements
                         if (
@@ -123,7 +125,7 @@ class PerceptionThread(QThread):
 
                             # Execute actions
                             self.forklift.send_steering(
-                                int(np.rad2deg(steer) * 1.12) + 100
+                                int(np.rad2deg(steer) * 1.11) + 100
                             )
                             time.sleep(0.1)
                             self.forklift.send_throttle(int(v * 0.617))
