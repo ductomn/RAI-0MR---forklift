@@ -31,7 +31,8 @@ class PerceptionThread(QThread):
         self.mainPathPlaning = (
             MainPathPlaning()
         )  # some parameters are needed to change as needed
-        self.epsilon = 7  # Max error of theta + position
+        self.epsilon = 40  # Max error of position
+        self.epsilonTheta = 0.6
         self.dt = 0.5  # Time interval of path planing
         self.stateSpace = [600, 400]  # This defimes max dimensions of movements [x y]
         self.markersize = 45  # This is the size of the ArUco marker
@@ -39,28 +40,28 @@ class PerceptionThread(QThread):
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(0)
-        # camera = cam.ImageProcessor(640, 480, 30)
-        # camera.start()
+        # camera = cv2.VideoCapture(0)
+        camera = cam.ImageProcessor(640, 480, 30)
+        camera.start()
 
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image
-                _, frame = camera.read()
-                height, width = frame.shape[:2]
-                self.stateSpace = [width, height]
-
-                if not camera.isOpened():
-                    self.msleep(10)
-                    continue
-
-                # frame = camera.get_frames()
+                # _, frame = camera.read()
                 # height, width = frame.shape[:2]
                 # self.stateSpace = [width, height]
-                #
-                # if not camera.is_running():
+
+                # if not camera.isOpened():
                 #     self.msleep(10)
                 #     continue
+
+                frame = camera.get_frames()
+                height, width = frame.shape[:2]
+                self.stateSpace = [width, height]
+                
+                if not camera.is_running():
+                    self.msleep(10)
+                    continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
@@ -88,15 +89,15 @@ class PerceptionThread(QThread):
                         )
 
                         self.mainPathPlaning.inGoal(
-                            2 * self.epsilon, realState, goalState
+                            self.epsilon, self.epsilonTheta, realState, goalState
                         )
 
-                        # print(f"Real State: {realState}, Goal State: {goalState}")
+                        #print(f"Real State: {realState}, Goal State: {goalState}")
 
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
                             if (
-                                self.mainPathPlaning.error(2 * self.epsilon, realState)
+                                self.mainPathPlaning.error(2 * self.epsilon,4 * self.epsilonTheta, realState)
                                 and not self.mainPathPlaning.goalReached
                             ):
                                 self.choosePathPlaner(
@@ -198,8 +199,8 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.release()
-            # camera.stop()
+            # camera.release()
+            camera.stop()
 
     def choosePathPlaner(self, mode, realState, goalState, stateSpace):
         # stop movements
@@ -218,6 +219,7 @@ class PerceptionThread(QThread):
                     goalState,
                     stateSpace,
                     self.epsilon,
+                    self.epsilonTheta
                 )
 
             case 1:
@@ -227,8 +229,8 @@ class PerceptionThread(QThread):
                 print("Replaning with Whut")
 
         # Good path
-        # print("path found")
-        # print(self.mainPathPlaning.path)
+        print("path found")
+        print(self.mainPathPlaning.path)
 
     def pickUpSeq(self):
         # Stop movements
