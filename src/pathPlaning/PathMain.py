@@ -2,6 +2,7 @@ import numpy as np
 
 import heapq
 from pathPlaning.path_Search import AstarHybrid
+from pathPlaning.kinodynamicRRT import KinodynamicRRT
 
 
 class Node:
@@ -22,14 +23,8 @@ class MainPathPlaning:
         self.index = 1  # this defines index of actual action that is processed
         self.goalReached = False  # am i in goal ? XD
 
-    def startPlaning(self, dt, start, goal, stateSpace, tol):
-        # Reset
         v = 100  # mm/s
-        self.path = []  # [x, y, theta]
-        self.actions = []  # [v, fi]
-        self.index = 1  # this defines index of actual action that is processed
-
-        avalibeActions = [
+        self.avalibeActions = [
             [v * 1.5, np.pi / 6],  # 30
             [v * 1.5, np.pi / 8],  # 22,5 ==> 45 == 50
             [v * 2, 0],
@@ -40,8 +35,14 @@ class MainPathPlaning:
             [-v, -np.pi / 5],
         ]  # this defines avalibe movements
 
+    def startAstarHybrid(self, dt, start, goal, stateSpace, tol):
+        # Reset
+        self.path = []  # [x, y, theta]
+        self.actions = []  # [v, fi]
+        self.index = 1  # this defines index of actual action that is processed
+
         # define planer class
-        planer = AstarHybrid(dt, avalibeActions, goal, stateSpace)
+        planer = AstarHybrid(dt, self.avalibeActions, goal, stateSpace)
 
         # define starting node
         startNode = Node(
@@ -76,7 +77,7 @@ class MainPathPlaning:
             newStates = planer.lookAround(selectedNode.state)
 
             # 3. assign state + action + parent to nodes
-            for state, action in zip(newStates, avalibeActions):
+            for state, action in zip(newStates, self.avalibeActions):
                 # checkBoundaries
                 if planer.checkBoundaries(state):
                     continue
@@ -102,6 +103,15 @@ class MainPathPlaning:
                 if i >= 1e5:
                     self.actions = planer.reconstructPath(newNode)[1]
                     return
+
+    def startKinodynamicRRT(self, dt, start, goal, stateSpace, tol):
+        # Reset
+        self.path = []  # [x, y, theta]
+        self.actions = []  # [v, fi]
+        self.index = 1  # this defines index of actual action that is processed
+
+        planer = KinodynamicRRT(dt, self.avalibeActions, goal, stateSpace)
+        self.path, self.actions = planer.plan(start, tol)
 
     def state_key(self, stateCheck):
         # this function is only for unpacking states

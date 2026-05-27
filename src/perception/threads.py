@@ -15,7 +15,7 @@ class PerceptionThread(QThread):
     # Signal 1: Sends the annotated image to the GUI to be displayed
     new_frame_signal = pyqtSignal(QImage)
 
-    def __init__(self, forklift: ForkliftClient):
+    def __init__(self, forklift: ForkliftClient = None):
         super().__init__()
         self._run_flag = True
         self.detector = Detection(cv2.aruco.DICT_4X4_100)
@@ -23,7 +23,7 @@ class PerceptionThread(QThread):
         self.show_path = False
         self.override = False
         self.go = False
-        self.forklift: ForkliftClient = forklift  # passed class for controll
+        self.forklift = forklift  # passed class for controll
         self.mode = 0  # Choose witch path planer i am using
         self.pickUpDone = False
 
@@ -39,28 +39,33 @@ class PerceptionThread(QThread):
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(0)
-        # camera = cam.ImageProcessor(640, 480, 30)
-        # camera.start()
+        # Capture image with webcam
+        # camera = cv2.VideoCapture(0)
+
+        # With OAKID LITE
+        camera = cam.ImageProcessor(640, 480, 30)
+        camera.start()
 
         try:
             while self._run_flag and not self.isInterruptionRequested():
-                # Capture image
-                _, frame = camera.read()
-                height, width = frame.shape[:2]
-                self.stateSpace = [width, height]
-
-                if not camera.isOpened():
-                    self.msleep(10)
-                    continue
-
-                # frame = camera.get_frames()
+                # Capture image with webcam
+                # _, frame = camera.read()
                 # height, width = frame.shape[:2]
                 # self.stateSpace = [width, height]
-                #
-                # if not camera.is_running():
+
+                # if not camera.isOpened():
                 #     self.msleep(10)
                 #     continue
+
+
+                # With OAKID LITE
+                frame = camera.get_frames()
+                height, width = frame.shape[:2]
+                self.stateSpace = [width, height]
+                
+                if not camera.is_running():
+                    self.msleep(10)
+                    continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
@@ -103,6 +108,7 @@ class PerceptionThread(QThread):
                                     self.mode, realState, goalState, resized_stateSpace
                                 )
                                 now = time.time()  # start timer only after replan
+                                self.lastTime = now
 
                         # Execute movements
                         if (
@@ -116,20 +122,23 @@ class PerceptionThread(QThread):
                                 self.mainPathPlaning.index
                             ]
 
-                            # print(
-                            #     f"Executing action: v={v}, steer={steer}, int_v={int(v * 0.617)}"
-                            # )
+                            print(
+                                f"Executing action: v={v}, steer={steer}, int_v={int(v * 0.617)}"
+                            )
 
                             # Execute actions
-                            self.forklift.send_steering(
-                                int(np.rad2deg(steer) * 1.12) + 100
-                            )
-                            time.sleep(0.1)
-                            self.forklift.send_throttle(int(v * 0.617))
+                            if self.forklift is not None:
+                                self.forklift.send_steering(
+                                    int(np.rad2deg(steer) * 1.12) + 100
+                                )
+                                time.sleep(0.1)
+                                self.forklift.send_throttle(int(v / 0.617))
 
                         if self.mainPathPlaning.goalReached and not self.pickUpDone:
                             # when in goal pick up pallet
-                            self.pickUpSeq()
+                            print("Goal reached, ready to pick up")
+                            if self.forklift is not None:
+                                self.pickUpSeq()
 
                 #  Show Path Visualization if enabled
                 if self.show_path and not self.override and self.mainPathPlaning.path:
@@ -182,7 +191,7 @@ class PerceptionThread(QThread):
                                 2,
                             )
 
-                if (not self.go) and not self.override:  # len(corners) < 2 or
+                if (not self.go) and not self.override and self.forklift is not None:  # len(corners) < 2 or
                     self.forklift.stop_steering()
                     self.forklift.stop_throttle()
 
@@ -198,21 +207,25 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.release()
-            # camera.stop()
+            # Capture image with webcam
+            # camera.release()
+            
+            # With OAKID LITE
+            camera.stop()
 
     def choosePathPlaner(self, mode, realState, goalState, stateSpace):
         # stop movements
-        self.forklift.stop_steering()
-        time.sleep(0.1)
-        self.forklift.stop_throttle()
+        if self.forklift is not None:
+            self.forklift.stop_steering()
+            time.sleep(0.1)
+            self.forklift.stop_throttle()
 
         # choose which path planer will be used
         match mode:
             case 0:
                 print("Replaning with A* hybrit (DC)")
                 # replan
-                self.mainPathPlaning.startPlaning(
+                self.mainPathPlaning.startAstarHybrid(
                     self.dt,
                     realState,
                     goalState,
@@ -221,7 +234,15 @@ class PerceptionThread(QThread):
                 )
 
             case 1:
-                print("Replaning with WHUt")
+                print("Replaning with Kinodynamic RRT")
+                # replan
+                self.mainPathPlaning.startKinodynamicRRT(
+                    self.dt,
+                    realState,
+                    goalState,
+                    stateSpace,
+                    self.epsilon,
+                )
 
             case 2:
                 print("Replaning with Whut")
