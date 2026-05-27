@@ -39,28 +39,33 @@ class PerceptionThread(QThread):
         self.lastTime = None
 
     def run(self):
-        camera = cv2.VideoCapture(0)
-        # camera = cam.ImageProcessor(640, 480, 30)
-        # camera.start()
+        # Capture image with webcam
+        # camera = cv2.VideoCapture(0)
+
+        # With OAKID LITE
+        camera = cam.ImageProcessor(640, 480, 30)
+        camera.start()
 
         try:
             while self._run_flag and not self.isInterruptionRequested():
-                # Capture image
-                _, frame = camera.read()
-                height, width = frame.shape[:2]
-                self.stateSpace = [width, height]
-
-                if not camera.isOpened():
-                    self.msleep(10)
-                    continue
-
-                # frame = camera.get_frames()
+                # Capture image with webcam
+                # _, frame = camera.read()
                 # height, width = frame.shape[:2]
                 # self.stateSpace = [width, height]
-                #
-                # if not camera.is_running():
+
+                # if not camera.isOpened():
                 #     self.msleep(10)
                 #     continue
+
+
+                # With OAKID LITE
+                frame = camera.get_frames()
+                height, width = frame.shape[:2]
+                self.stateSpace = [width, height]
+                
+                if not camera.is_running():
+                    self.msleep(10)
+                    continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
@@ -201,8 +206,11 @@ class PerceptionThread(QThread):
                 )
                 self.new_frame_signal.emit(qt_image)
         finally:
-            camera.release()
-            # camera.stop()
+            # Capture image with webcam
+            # camera.release()
+            
+            # With OAKID LITE
+            camera.stop()
 
     def choosePathPlaner(self, mode, realState, goalState, stateSpace):
         # stop movements
