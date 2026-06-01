@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QObject, QTimer
 
 from ui.main_window import MainWindow
-from perception.threads import PerceptionThread
+from main_thread import MainThread
 from drive.forklift_control import ForkliftClient
 
 
@@ -17,7 +17,7 @@ class AppController(QObject):
         uri = "ws://192.168.4.1/CarInput"
         self.forklift = ForkliftClient(uri)
         # self.forklift = None  # For testing without forklift connection
-        self.perception_thread = PerceptionThread(forklift=self.forklift)
+        self.perception_thread = MainThread(forklift=self.forklift)
 
         self.pressed_keys = set()  # Track active keys
 
