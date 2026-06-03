@@ -205,9 +205,29 @@ If the open set exceeds $100{,}000$ expansions, the planner stops and returns th
 
 ### Dijkstra
 
-TODO: description and explanation of the algorithm
+This path planner uses Dijkstra agorithm for finding the best path to the goal.
 
-The replanning trigger is the same as described in the shared pipeline above.
+####Algorithm
+Dijkstra algorithm finds the shortes path from the start to every other node in the state space. From the next node, it expands to its neighboring nodes and save new cost for these nodes. If the new cost is lower than previous cost,  the new cost is saved for this node. The algorithm runs until goal is reached.
+
+#### Architecture
+This algorithm shares similar architecture with Hybrid A*.
+**Model (`ForkSim`)**-simulation of the possible movements
+**Path - planning engine(`MainPathPlaningDijkstra`)**- implements the main loop for path planning, 
+
+#### Action space
+For this algorithm, same moves as for A* Hybrid are used. It is possible to go forward/backward, with speed 60, 90 or 120 mm/s. Angle of the wheels can be 0, π/5, π/6 or π/8. Simulation of forklift is used to get new states.
+
+#### Cost function
+Nodes are sorted by cost. In Dijkstra algorithm,  heuristic is not used. Cost of every node depends on its distance from start.
+
+#### State quantization
+Like the A* Hybridy, the space is quantized:
+
+- Position ($x, y$) is rounded to the $10\text{ mm}$
+- Rotation ($\theta$) is rounded to $0.1\text{ rad}$
+
+This function creates discrete grid.
 
 ---
 
