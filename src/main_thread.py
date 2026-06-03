@@ -40,32 +40,31 @@ class MainThread(QThread):
 
     def run(self):
         # Capture image with webcam
-        # camera = cv2.VideoCapture(0)
+        camera = cv2.VideoCapture(0)
 
         # With OAKID LITE
-        camera = cam.ImageProcessor(640, 480, 30)
-        camera.start()
+        # camera = cam.ImageProcessor(640, 480, 30)
+        # camera.start()
 
         try:
             while self._run_flag and not self.isInterruptionRequested():
                 # Capture image with webcam
-                # _, frame = camera.read()
-                # height, width = frame.shape[:2]
-                # self.stateSpace = [width, height]
-
-                # if not camera.isOpened():
-                #     self.msleep(10)
-                #     continue
-
-
-                # With OAKID LITE
-                frame = camera.get_frames()
+                _, frame = camera.read()
                 height, width = frame.shape[:2]
                 self.stateSpace = [width, height]
-                
-                if not camera.is_running():
+
+                if not camera.isOpened():
                     self.msleep(10)
                     continue
+
+                # With OAKID LITE
+                # frame = camera.get_frames()
+                # height, width = frame.shape[:2]
+                # self.stateSpace = [width, height]
+                #
+                # if not camera.is_running():
+                #     self.msleep(10)
+                #     continue
 
                 # Process Image (ArUco Detection)
                 corners, ids, _, annotated_frame = self.detector.detect_markers(frame)
@@ -93,7 +92,7 @@ class MainThread(QThread):
                         )
 
                         self.mainPathPlaning.inGoal(
-                            2 * self.epsilon, realState, goalState
+                            2 * self.epsilon, self.epsilon / 5, realState, goalState
                         )
 
                         # print(f"Real State: {realState}, Goal State: {goalState}")
@@ -101,7 +100,9 @@ class MainThread(QThread):
                         if self.mainPathPlaning is not None:
                             # If error of real state and planed state >= epsilon -> replan
                             if (
-                                self.mainPathPlaning.error(2 * self.epsilon, realState)
+                                self.mainPathPlaning.error(
+                                    2 * self.epsilon, self.epsilon / 5, realState
+                                )
                                 and not self.mainPathPlaning.goalReached
                             ):
                                 self.choosePathPlaner(
@@ -191,7 +192,9 @@ class MainThread(QThread):
                                 2,
                             )
 
-                if (not self.go) and not self.override and self.forklift is not None:  # len(corners) < 2 or
+                if (
+                    (not self.go) and not self.override and self.forklift is not None
+                ):  # len(corners) < 2 or
                     self.forklift.stop_steering()
                     self.forklift.stop_throttle()
 
@@ -208,10 +211,10 @@ class MainThread(QThread):
                 self.new_frame_signal.emit(qt_image)
         finally:
             # Capture image with webcam
-            # camera.release()
-            
+            camera.release()
+
             # With OAKID LITE
-            camera.stop()
+            # camera.stop()
 
     def choosePathPlaner(self, mode, realState, goalState, stateSpace):
         # stop movements
@@ -231,6 +234,7 @@ class MainThread(QThread):
                     goalState,
                     stateSpace,
                     self.epsilon,
+                    self.epsilon / 5,
                 )
 
             case 1:

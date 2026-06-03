@@ -35,7 +35,7 @@ class MainPathPlaning:
             [-v, -np.pi / 5],
         ]  # this defines avalibe movements
 
-    def startAstarHybrid(self, dt, start, goal, stateSpace, tol):
+    def startAstarHybrid(self, dt, start, goal, stateSpace, tol, thetaTol):
         # Reset
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
@@ -163,7 +163,7 @@ class MainPathPlaning:
 
         # Calculate actual error
         errPos = np.sqrt((rx - sx) ** 2 + (ry - sy) ** 2)
-        errTheta = (np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi))
+        errTheta = np.abs((rtheta - stheta + np.pi) % (2 * np.pi) - np.pi)
 
         self.index += 1
         return epsilonPos <= errPos and epsilonTheta <= errTheta
