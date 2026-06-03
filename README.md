@@ -1,6 +1,6 @@
 # Camera Navigated Forklift
 
-An application for automatic localisation of a forklift and pallet using AruCo markers, followed by path planning and navigation (control) of the forklift. Project as part of assignment for courses - Mobile Robotics (0MR) and Artificial Intelligence (RAI).
+An application for automatic localisation of a forklift and pallet using ArUco markers, followed by path planning and navigation (control) of the forklift. Project as part of assignment for courses - Mobile Robotics (0MR) and Artificial Intelligence (RAI).
 
 Videos [here](https://drive.google.com/drive/folders/1I0BrmYF28AGaCJv-hU61jXQ6gOcWJSau?usp=drive_link&fbclid=IwY2xjawSKYypleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEeotVoscn4jFc70l5WkeKUeoDFRALwGTEwweNuVPn_y9JHAYtO-aWhbo_8BCA_aem_JSdnNN2rNKQAMNQsLFqX0w)
 
@@ -8,15 +8,13 @@ Videos [here](https://drive.google.com/drive/folders/1I0BrmYF28AGaCJv-hU61jXQ6gO
 
 ---
 
-## Structure of the project
+## Forklift
 
-### Forklift
+3D printed RC forklift from [this link](https://www.printables.com/model/1058749-3d-printed-rc-forklift-diy). The used PCB and code is also from this source, but note that these are paid.
 
-3D printed RC forklift from [this link](https://www.printables.com/model/1058749-3d-printed-rc-forklift-diy).
+### Drive - ForkliftClient
 
-### Drive
-
-Interface for controlling the forklift via websocket.
+The controlling ESP32 runs a web server, which receives messages and based on these messages/commands, it controls the motors. Class ForkliftClient connects to the websocket and sends the specific messages/commands.
 
 ---
 
@@ -26,7 +24,7 @@ Interface for controlling the forklift via websocket.
 
 Camera used is OAK-D Lite.
 
-### AruCo detection
+### ArUco detection
 
 - Detection is done using the `cv2` function
 - Detected markers are sorted based on their ID
@@ -45,7 +43,7 @@ $$
 
 #### Center position of the marker
 
-Because the `cv2` function for AruCo marker detection returns coordinates of the four corners in the correct order, the center position $(X_c, Y_c)$ of a single marker is found simply by taking the arithmetic mean of its four corner coordinates: $P_0, P_1, P_2, P_3$.
+Because the `cv2` function for ArUco marker detection returns coordinates of the four corners in the correct order, the center position $(X_c, Y_c)$ of a single marker is found simply by taking the arithmetic mean of its four corner coordinates: $P_0, P_1, P_2, P_3$.
 
 $$
 X_c = \frac{x_0 + x_1 + x_2 + x_3}{4}
@@ -57,7 +55,7 @@ $$
 
 #### Pixel to millimeter conversion
 
-Since the real-world size of the used AruCo marker is known, the ratio of pixels to mm can be calculated. The ratio is calculated from the length of the marker edge. Since AruCo markers are square-shaped, each edge should be the same length, so an average edge length $L$ is calculated like so:
+Since the real-world size of the used ArUco marker is known, the ratio of pixels to mm can be calculated. The ratio is calculated from the length of the marker edge. Since ArUco markers are square-shaped, each edge should be the same length, so an average edge length $L$ is calculated like so:
 
 $$
 L_{px} = \frac{d(P_0, P_1) + d(P_1, P_2) + d(P_2, P_3) + d(P_3, P_0)}{4},
@@ -85,7 +83,7 @@ The size of the state space is converted to mm in the same way.
 
 ---
 
-## Path Planning
+## Path planning
 
 All three planners share the same pipeline:
 
@@ -95,9 +93,9 @@ The only difference between them is how the path is calculated. The replan trigg
 
 ### Shared pipeline
 
-#### Kinematic Motion Model
+#### Kinematic motion model
 
-This module simulates the kinematic movement of the forklift using the standard **Kinematic Bicycle Model**. The path calculation switches automatically between straight-line integration and arc integration based on the steering angle.
+This module simulates the kinematic movement of the forklift using the standard **Kinematic bicycle model**. The path calculation switches automatically between straight-line integration and arc integration based on the steering angle.
 
 ##### Geometric concept
 
@@ -237,7 +235,7 @@ When path visualisation is turned on, the planned trajectory is drawn directly o
 
 - **Green `"Path Planning Active"` indicator** — confirms the closed-loop tracking thread is running
 - **Drift feedback** — if the forklift drifts outside the error threshold, the UI shows the path being cleared and replanning starting
-- **Control buttons** — `Go`, `Override`, and `Show Path` allow the operator to start, stop, or inspect execution
+- **Control buttons** — `Go`, `Override`, and `Show path` allow the operator to start, stop, or inspect execution
 
 ---
 
