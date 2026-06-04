@@ -276,15 +276,14 @@ When path visualisation is turned on, the planned trajectory is drawn directly o
 
 ---
 
-## Testing and results
+## Conclusion
 
+The current iteration of the program is partially functional and successfully demonstrates the ability to navigate the forklift and converge to the target destination. However, field tests have highlighted several core limitations regarding the hardware and localization accuracy:
 
----
+* **Simulation vs. Reality:** There is a significant deviation between the physical forklift's movement and the idealized non-holonomic kinematic model used in the simulation (`ForkSim`). The mathematical model doesn't include imperfections and friction and assumes perfect traction and precise steering, which does not reflect the real-world physics of the vehicle.
 
-## TODO
+* **Hardware limitations:** The 3D printed RC model lacks mechanical precision. The motors and steering mechanisms do not respond consistently to commands, leading to unpredictable movements that the path planner struggles to correct in real-time. 
 
-- Add Dijkstra path planner
-- Add RRT path planner
-- Add explanation of each algorithm
-- Explain threading
-- Describe full program execution sequence (step by step)
+* **Localization assumptions:** The ArUco marker localization currently assumes the camera is positioned perfectly perpendicular to the operational surface. Any slight angle in the camera mount introduces error into the coordinate mapping.
+
+* **Lens distortion:** When the forklift moves toward the outer edges of the camera frame, the camera calculates incorrect coordinates. This is caused by uncorrected lens distortion, which misinterprets the scale and distance of the markers at the periphery of the image.
