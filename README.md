@@ -10,7 +10,7 @@ Videos [here](https://drive.google.com/drive/folders/1I0BrmYF28AGaCJv-hU61jXQ6gO
 
 ## Forklift
 
-3D printed RC forklift from [this link](https://www.printables.com/model/1058749-3d-printed-rc-forklift-diy). The used PCB and code is also from this source, but note that these are paid.
+3D printed RC forklift from [this link](https://www.printables.com/model/1058749-3d-printed-rc-forklift-diy). The used PCB and code is also from the same author, but note that these are paid.
 
 ### Drive - ForkliftClient
 
@@ -22,16 +22,15 @@ The controlling ESP32 runs a web server, which receives messages and based on th
 
 ### Camera access
 
-Camera used is OAK-D Lite.
+Camera used is OAK-D Lite. The camera captures the image for image processing and path planning.
 
 ### ArUco detection
 
-- Detection is done using the `cv2` function
-- Detected markers are sorted based on their ID
+ArUco markers are detected using the `cv2` function `cv2.aruco.ArucoDetector.detectMarkers()`. Which are then sorted based on their ID. For our application, the forklift has ID=0 and the palete has ID=1. 
 
-### Localisation
+### Localization
 
-Position and angle orientation of each detected marker is calculated from the corner coordinates returned by `cv2`.
+Position and angle orientation of each detected marker is calculated from the corner coordinates returned by `cv2`. function
 
 #### Orientation angle of the marker
 
@@ -162,24 +161,29 @@ When the forklift arrives within the goal tolerance zone ($\text{Distance} < 2\e
 
 ---
 
-### Hybrid A\*
-
-An advanced path planner that combines graph search with vehicle kinematics to generate smooth, physically drivable trajectories.
-
-#### Architecture
+### Architecture
 
 The system is split into three core components:
 
 1. **Motion Model (`ForkSim`)** — simulates bicycle steering geometry with rear-wheel characteristics
-2. **Path Engine (`MainPathPlaning`)** — handles the search loop, priority queue, path reconstruction, and error thresholds
-3. **Search Core (`AstarHybrid`)** — implements grid-discretized search while tracking non-holonomic constraints
+2. **Path Engine (`MainPathPlaning`, `MainPathPlaningDijkstra`)** — handles the search loop, priority queue, path reconstruction, and error thresholds
+3. **Search Core (`AstarHybrid`, `KinodynamicRRT`, `Dijkstra`)** — implements grid-discretized search while tracking non-holonomic constraints
 
-#### Action space
 
-The planner uses a set of discrete motion primitives:
+### Action space
+
+The planners use a set of discrete motion primitives:
 
 - Forward moves ($\approx 1.5v$ to $2v$) combined with steering angles of $\pm 30°$, $\pm 22.5°$, or $0°$
 - Reverse moves ($-v$) with steering angles of $\pm 36°$ or $0°$
+
+Simulation of forklift (`ForkSim`) is used to get new states.
+
+---
+
+### Hybrid A\*
+
+An advanced path planner that combines graph search with vehicle kinematics to generate smooth, physically drivable trajectories.
 
 #### Cost function ($f(n) = g(n) + h(n)$)
 
@@ -207,22 +211,14 @@ If the open set exceeds $100{,}000$ expansions, the planner stops and returns th
 
 This path planner uses Dijkstra agorithm for finding the best path to the goal.
 
-####Algorithm
-Dijkstra algorithm finds the shortes path from the start to every other node in the state space. From the next node, it expands to its neighboring nodes and save new cost for these nodes. If the new cost is lower than previous cost,  the new cost is saved for this node. The algorithm runs until goal is reached.
-
-#### Architecture
-This algorithm shares similar architecture with Hybrid A*.
-**Model (`ForkSim`)**-simulation of the possible movements
-**Path - planning engine(`MainPathPlaningDijkstra`)**- implements the main loop for path planning, 
-
-#### Action space
-For this algorithm, same moves as for A* Hybrid are used. It is possible to go forward/backward, with speed 60, 90 or 120 mm/s. Angle of the wheels can be 0, π/5, π/6 or π/8. Simulation of forklift is used to get new states.
+#### Algorithm
+Dijkstra algorithm finds the shortest path from the start to every other node in the state space. From the next node, it expands to its neighboring nodes and save new cost for these nodes. If the new cost is lower than previous cost,  the new cost is saved for this node. The algorithm runs until goal is reached.
 
 #### Cost function
 Nodes are sorted by cost. In Dijkstra algorithm,  heuristic is not used. Cost of every node depends on its distance from start.
 
 #### State quantization
-Like the A* Hybridy, the space is quantized:
+Like the Hybrid A*, the space is quantized:
 
 - Position ($x, y$) is rounded to the $10\text{ mm}$
 - Rotation ($\theta$) is rounded to $0.1\text{ rad}$
@@ -231,9 +227,25 @@ This function creates discrete grid.
 
 ---
 
-### RRT (Rapidly-exploring Random Tree)
+### Kinodynamic RRT (Rapidly-exploring Random Tree)
+A sample-based path planner that randomly expands the tree. First RRT will be explained, and then the kinodynamic part.
 
-TODO: description and explanation of the algorithm
+#### Algorithm of RRT
+1. Randomly generate a point $q_{rand}$ within the state-space.
+    - the probability of generating the goal as a point is defined with *goal bias*
+
+2. Find the closest node to $q_{rand}$ — $q_{near}$, which will be the parent node of $q_{rand}$.
+
+3. From $q_{near}$ move by $\Delta d$ towards $q_{rand}$ — a new node $q_{new}$ is generated. $\Delta d$ is defined by set velocity and time interval $dt$. This part will be described in more detail below, because by modifying this part it will become *kinodynamic*.
+
+4. Check if $q_{new}$ is close enough to the goal, if yes, return the generated path.
+
+5. Repeat up to N times
+
+#### Kinodynamic
+The reason, the kinodynamic variant was used, is because of the constraints of the real-world forklift. More specifically because the forklift is non-holonomic and it's necessary to ensure that the generated path can be followed by the real-world vehicle. 
+
+What makes the algorithm kinodynamic is the modification of the **3. point** of the described algorithm. When new node $q_{new}$ is generated, the algorithm iterates through defined actions and runs those actions through the forklift model `ForkSim`. The action that moves the forklift closest to $q_{rand}$ is chosen as $q_{new}$. This way the algorithm respects the kinematics and dynamics of the vehicle. But the model `ForkSim` has to be accurate enough.
 
 The replanning trigger is the same as described in the shared pipeline above.
 
@@ -242,6 +254,8 @@ The replanning trigger is the same as described in the shared pipeline above.
 ## UI and telemetry
 
 The GUI serves as the main monitor for the path planning engine. It shows real-time camera output together with the inner state of the planner.
+
+The GUI and the path planning run in separate thread, which allows them to work without blocking each other.
 
 ### Path visualisation
 
@@ -253,9 +267,17 @@ When path visualisation is turned on, the planned trajectory is drawn directly o
 
 ### Status and controls
 
-- **Green `"Path Planning Active"` indicator** — confirms the closed-loop tracking thread is running
+- **Green `"Path Planning Active"` indicator** — confirms the closed-loop tracking thread is running, displayed only when path found
 - **Drift feedback** — if the forklift drifts outside the error threshold, the UI shows the path being cleared and replanning starting
-- **Control buttons** — `Go`, `Override`, and `Show path` allow the operator to start, stop, or inspect execution
+- **Control buttons** 
+    - `Show path` — toggle path display
+    - `Go` — start/stop executing actions returned from path-planning
+    - `Override` —  stop executing commands and enable user to drive the forklift with keyboard (W, A, S, D)
+
+---
+
+## Testing and results
+
 
 ---
 
