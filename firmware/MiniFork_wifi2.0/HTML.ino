@@ -1,351 +1,420 @@
+     
 // This file contains the HTML data for the ESP32.
 
 const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>MINI-FORK Controller</title>
   <style>
+    :root {
+      --bg: #101519;
+      --panel: #1a2329;
+      --line: #3d4b53;
+      --text: #f3f6f7;
+      --muted: #aebbc1;
+      --accent: #f0a51a;
+      --button: #303c44;
+      --danger: #e24b3b;
+    }
+    * { box-sizing: border-box; }
     html, body {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       margin: 0;
-      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
       overscroll-behavior: none;
+    }
+    body {
+      min-height: var(--app-height, 100dvh);
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
       touch-action: none;
     }
-    #mainTable {
-      width: min(400px, 94vw) !important;
-    }
-    .arrows {
-      font-size:50px;
-      color:grey;
-    }
-    td.button {
-      background-color:black;
-      border-radius:20%;
-      box-shadow: 5px 5px #888888;
-    }
-    td.button:active {
-      transform: translate(5px,5px);
-      box-shadow: none; 
-    }
-    .auxButton {
-  background-color: black; /* Background color of the button */
-  box-shadow: 5px 5px #888888;
-  color: grey; /* Text color */
-  padding: 30px 35px; /* Padding for the button */
-  border: none; /* Remove the button border */
-  border-radius: 20%; /* Rounded corners */
-  font-size: 24px; /* Font size */
-  cursor: pointer; /* Cursor style on hover */
-  transform: rotate(90deg); /* Rotate the text vertically */
-  transform-origin: left center; /* Adjust the origin to change the rotation pivot */
-  margin-left: 60px;
-  margin-top: 55px;
-}
-    .auxButton:active {
-      transform: translate(-5px,5px);
-      transform: rotate(90deg); /* Rotate the text vertically */
-      transform-origin: left center;
-      
-      box-shadow: none; 
-    }
-
-    .noselect {
-      -webkit-touch-callout: none; /* iOS Safari */
-        -webkit-user-select: none; /* Safari */
-         -khtml-user-select: none; /* Konqueror HTML */
-           -moz-user-select: none; /* Firefox */
-            -ms-user-select: none; /* Internet Explorer/Edge */
-                user-select: none; /* Non-prefixed version, currently
-                                      supported by Chrome and Opera */
-    }
-        .slidecontainer {
-      width: 100%;
-    }
-
-    .slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 20px;
-      border-radius: 5px;
-      background: #d3d3d3;
-      outline: none;
-      opacity: 0.7;
-      -webkit-transition: .2s;
-      transition: opacity .2s;
-    }
-
-    .slider:hover {
-      opacity: 1;
-    }
-  
-    .slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 65px;
-      height: 65px;
-      border-radius: 50%;
-      background: red;
+    button { font: inherit; color: var(--text); }
+    .controller { width: min(1100px, 100%); min-height: calc(var(--app-height, 100dvh) - 20px); margin: 0 auto; display: flex; flex-direction: column; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 10px; }
+    h1 { margin: 0; font-size: clamp(1.35rem, 5vw, 2rem); letter-spacing: .12em; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .connection { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .connected .dot { background: #39c66b; box-shadow: 0 0 8px #39c66b; }
+    .fullscreen-button { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--button); color: var(--text); font-size: .72rem; cursor: pointer; touch-action: manipulation; }
+    .control-area { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 10px; }
+    .panel { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: clamp(10px, 2vw, 16px); }
+    .panel-title { margin: 0 0 10px; color: var(--muted); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+    .left-controls { display: flex; min-height: 100%; flex-direction: column; justify-content: center; gap: 12px; }
+    .mast-buttons { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .tilt-rocker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .control-button {
+      min-height: 68px;
+      border: 1px solid #586770;
+      border-radius: 15px;
+      background: var(--button);
+      box-shadow: 0 4px 0 #080b0d;
+      font-size: .88rem;
+      font-weight: 700;
       cursor: pointer;
+      touch-action: none;
+      user-select: none;
     }
-
-    .slider::-moz-range-thumb {
-      width: 60px;
-      height: 40px;
+    .control-button:active, .control-button.active {
+      transform: translateY(3px);
+      background: var(--accent);
+      color: #101519;
+      box-shadow: 0 1px 0 #080b0d;
+    }
+    .symbol { display: block; margin-bottom: 4px; font-size: 2rem; line-height: 1; }
+    .tilt-rocker .control-button { min-height: 82px; }
+    .light-button { min-height: 54px; }
+    .joystick-panel { display: flex; min-height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+    .joystick-label { align-self: stretch; margin-bottom: 10px; }
+    .joystick-label .panel-title { margin-bottom: 0; }
+    .joystick {
+      position: relative;
+      width: min(70vw, 380px);
+      aspect-ratio: 1;
+      border: 2px solid #56666e;
       border-radius: 50%;
-      background: red;
-      cursor: pointer;
+      background:
+        linear-gradient(90deg, transparent 49.5%, #34434b 49.5%, #34434b 50.5%, transparent 50.5%),
+        linear-gradient(0deg, transparent 49.5%, #34434b 49.5%, #34434b 50.5%, transparent 50.5%),
+        radial-gradient(circle, #26333a 0 42%, #202c32 43% 70%, #182126 71%);
+      box-shadow: inset 0 0 0 12px #101519, 0 5px 0 #080b0d;
+      touch-action: none;
     }
-
-.vertical-slider-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 165px;
-  width: 5px; /* Adjust the width as needed */
-  height: 100px; /* Adjust the height as needed */
-}
-
-.vertical-slider {
-  writing-mode: bt-lr; /* IE/Edge specific property for vertical text */
-  -webkit-appearance: none;
-  width: 400px;
-  height: 20px;
-  transform: rotate(270deg);
-     background: #d3d3d3; /* Background color of the slider */
-        outline: none;
-      opacity: 0.7;
-      -webkit-transition: .2s;
-      transition: opacity .2s;
-}
-
-.vertical-slider:hover {
-      opacity: 1;
-    }
-.vertical-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-      appearance: none;
-  width: 65px; /* Adjust the width to make the slider thumb thicker */
-  height: 65px; /* Adjust the height to make the slider thumb thicker */
-  background-color: red; /* Background color of the slider thumb */
-  border: none; /* Remove the default border */
-  //margin-top: -5px; /* Center the thumb vertically within the track */
-}
-    .vertical-slider::-moz-range-thumb {
-      width: 60px;
-      height: 40px;
+    .joystick::before, .joystick::after { position: absolute; color: #73828a; font-size: 1.4rem; opacity: .8; }
+    .joystick::before { content: "▲"; top: 7%; left: calc(50% - .5em); }
+    .joystick::after { content: "▼"; bottom: 7%; left: calc(50% - .5em); }
+    .joystick-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 29%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: 4px solid #fff4d3;
       border-radius: 50%;
-      background: red;
-      cursor: pointer;
+      background: var(--accent);
+      box-shadow: 0 5px 0 #8b5d06, 0 0 0 7px rgba(240,165,26,.15);
+      pointer-events: none;
     }
+    .joystick-values { display: flex; justify-content: space-between; width: min(70vw, 380px); margin-top: 12px; color: var(--muted); font-size: .75rem; }
+    .joystick-values span { color: var(--text); font-variant-numeric: tabular-nums; }
+    .pc-info { margin-top: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: .76rem; line-height: 1.6; text-align: center; }
+    kbd { display: inline-block; min-width: 22px; padding: 0 5px; border: 1px solid #687881; border-radius: 4px; color: var(--text); text-align: center; }
+    .noselect { -webkit-user-select: none; user-select: none; }
 
-    </style>
-  
-  </head>
-  <body class="noselect" align="center" style="background-color:white;" >
-    <h1 style="color: black; text-align:center;">MINI-FORK</h1>
-    
-    <table id="mainTable" style="width:400px;margin:auto;table-layout:fixed" CELLSPACING=10>
-    <tr>
-        <td colspan=2 style="text-align: center;">
-         <div class="slidecontainer">
-            <input type="range" min="-255" max="255" value="0" class="slider" id="throttle" oninput='sendButtonInput("throttle",value)' ontouchend='resetSlider("throttle")'>
+    @media (max-width: 520px) and (orientation: portrait) {
+      .controller { min-height: calc(var(--app-height, 100dvh) - 20px); }
+      .control-area { min-height: 0; grid-template-columns: minmax(92px, .78fr) minmax(0, 1.22fr); }
+      .left-controls { gap: 9px; }
+      .control-button { min-height: 62px; padding: 5px 3px; font-size: .72rem; }
+      .tilt-rocker .control-button { min-height: 70px; }
+      .symbol { font-size: 1.65rem; }
+      .joystick { width: min(58vw, 280px); }
+      .joystick-values { width: min(58vw, 280px); font-size: .68rem; }
+      .pc-info { font-size: .67rem; line-height: 1.45; }
+    }
+    @media (min-width: 800px) {
+      .control-area { grid-template-columns: minmax(260px, .75fr) minmax(420px, 1.25fr); }
+      .control-button { min-height: 82px; }
+      .mast-buttons { grid-template-columns: 1fr 1fr; }
+      .mast-buttons .up-button { grid-column: 1; }
+      .mast-buttons .down-button { grid-column: 2; }
+      .joystick { width: min(42vw, 430px); }
+      .joystick-values { width: min(42vw, 430px); }
+      .pc-info { font-size: .82rem; }
+    }
+    @media (orientation: landscape) and (max-height: 600px) {
+      body { padding-top: 6px; padding-bottom: 6px; }
+      .topbar { padding-bottom: 5px; }
+      .control-area { min-height: 0; }
+      .panel { padding: 8px; }
+      .left-controls { gap: 6px; }
+      .control-button { min-height: 52px; }
+      .tilt-rocker .control-button { min-height: 58px; }
+      .symbol { font-size: 1.45rem; }
+      .joystick { width: min(48vh, 310px); }
+      .joystick-values { width: min(48vh, 310px); margin-top: 5px; }
+      .pc-info { margin-top: 5px; padding: 4px 8px; }
+    }
+  </style>
+</head>
+<body class="noselect">
+  <main class="controller">
+    <header class="topbar">
+      <h1>MINI-FORK</h1>
+      <div class="topbar-right">
+        <button id="fullscreenButton" class="fullscreen-button" type="button">FULLSCREEN</button>
+        <div id="connection" class="connection"><span class="dot"></span><span id="connectionText">Offline</span></div>
+      </div>
+    </header>
+
+    <section class="control-area">
+      <section class="panel left-controls" aria-label="Forklift attachment controls">
+        <div>
+          <h2 class="panel-title">Mast</h2>
+          <div class="mast-buttons">
+            <button class="control-button up-button" data-action="mast" data-value="6" data-release="0" aria-label="Raise mast"><span class="symbol">&#8593;</span>RAISE</button>
+            <button class="control-button down-button" data-action="mast" data-value="5" data-release="0" aria-label="Lower mast"><span class="symbol">&#8595;</span>LOWER</button>
           </div>
-        </td>
-      </tr>  
-      <tr/>
-      <tr/>
-      <tr/><tr/>
-      <tr>
-        <td class="button"
-    ontouchstart='sendButtonInput("mast", "5")'
-    onmousedown='sendButtonInput("mast", "5")'
-    ontouchend='sendButtonInput("mast", "0")'
-    onmouseup='sendButtonInput("mast", "0")'>
-    <span class="arrows">&#8678;</span></td>
-        <td class="button" ontouchstart='sendButtonInput("light","6")'onmousedown='sendButtonInput("light","6")'onmouseup='sendButtonInput("MoveCar","0")' ontouchend='sendButtonInput("MoveCar","0")'><span class="arrows" >&#9788;</span></td>   
-        <td class="button"
-    ontouchstart='sendButtonInput("mast", "6")'
-    onmousedown='sendButtonInput("mast", "6")'
-    ontouchend='sendButtonInput("mast", "0")'
-    onmouseup='sendButtonInput("mast", "0")'>
-    <span class="arrows">&#8680;</span></td>
-      </tr>
-      <tr/>
-      <tr/>
-      <tr/><tr/>
-<tr>
-  <td style="text-align: left; font-size: 25px"><b></b></td>
-  <td>
-    <div class="vertical-slider-container">
-      <input type="range" min="40" max="132" value="86" class="vertical-slider" id="steering" oninput='sendButtonInput("steering", value)'ontouchend='resetSlider("steering")'>
-    </div>
-  </td>
-  <td>
-    <button class="auxButton"
-    onpointerdown='this.setPointerCapture(event.pointerId); startSendingButtonInput("mTilt", "1")'
-    onpointerup='stopSendingButtonInput()'
-    onpointercancel='stopSendingButtonInput()'>FTILT</button>
-    <button class="auxButton"
-    onpointerdown='this.setPointerCapture(event.pointerId); startSendingButtonInput("mTilt", "2")'
-    onpointerup='stopSendingButtonInput()'
-    onpointercancel='stopSendingButtonInput()'>BTILT</button>
-</td>
-<tr/>
-<tr/>
-</tr>
-</tr>
-    </table>
-  
-    <script>
-      var webSocketCarInputUrl = "ws:\/\/" + window.location.hostname + "/CarInput";      
-      var websocketCarInput;
-      const throttleSlider = document.getElementById('throttle');
-      const steeringSlider = document.getElementById('steering');
+        </div>
+        <div>
+          <h2 class="panel-title">Tilt</h2>
+          <div class="tilt-rocker">
+            <button class="control-button" data-action="mTilt" data-value="1" data-repeat="true" aria-label="Tilt forward"><span class="symbol">&#8634;</span>TILT</button>
+            <button class="control-button" data-action="mTilt" data-value="2" data-repeat="true" aria-label="Tilt back"><span class="symbol">&#8635;</span>TILT</button>
+          </div>
+        </div>
+        <button class="control-button light-button" data-action="light" data-value="6" data-toggle="true" aria-label="Toggle lights"><span class="symbol">&#9788;</span>LIGHTS</button>
+      </section>
 
-      function resetSlider(sliderId) 
-      {
-       var slider = document.getElementById(sliderId);
-       var middleValue = (parseInt(slider.min) + parseInt(slider.max)) / 2;
-       slider.value = middleValue;
-       sendButtonInput(sliderId, middleValue);
-      }
-      
-      function initCarInputWebSocket() 
-      {
-        websocketCarInput = new WebSocket(webSocketCarInputUrl);
-        websocketCarInput.onclose   = function(event){setTimeout(initCarInputWebSocket, 2000);};
-        websocketCarInput.onmessage = function(event){};        
-      }
-      
-      function sendButtonInput(key, value) 
-      {
-       if (!websocketCarInput || websocketCarInput.readyState !== WebSocket.OPEN) return;
-       var data = key + "," + value;
-       websocketCarInput.send(data);
-      }
-      let intervalId = null;
+      <section class="panel joystick-panel" aria-label="Driving joystick">
+        <div class="joystick-label"><h2 class="panel-title">Drive</h2></div>
+        <div id="joystick" class="joystick">
+          <div id="joystickKnob" class="joystick-knob"></div>
+        </div>
+        <div class="joystick-values">
+          <span>Throttle: <span id="throttleValue">0</span></span>
+          <span>Steering: <span id="steeringValue">86</span></span>
+        </div>
+      </section>
+    </section>
 
-    function startSendingButtonInput(action, value) {
-    stopSendingButtonInput();
-    sendButtonInput(action, value);
-    // 20 Hz matches the desktop controller and avoids flooding the ESP32.
-    intervalId = setInterval(function() {
+    <footer class="pc-info">
+      PC keys:
+      <kbd>W</kbd>/<kbd>S</kbd> drive &nbsp;
+      <kbd>A</kbd>/<kbd>D</kbd> steer &nbsp;
+      <kbd>I</kbd>/<kbd>K</kbd> mast &nbsp;
+      <kbd>J</kbd>/<kbd>L</kbd> tilt &nbsp;
+      <kbd>X</kbd> lights
+    </footer>
+  </main>
+
+  <script>
+    var webSocketCarInputUrl = "ws:\/\/" + window.location.hostname + "/CarInput";
+    var websocketCarInput;
+    var repeatTimers = new Map();
+    var pressedKeys = new Set();
+    var activeMastButton = null;
+    var activeTiltButton = null;
+    var joystick = document.getElementById("joystick");
+    var joystickKnob = document.getElementById("joystickKnob");
+    var joystickTimer = null;
+    var joystickActive = false;
+    var joystickState = { throttle: 0, steering: 86 };
+    var lastJoystickPointerId = null;
+
+    function updateViewportHeight() {
+      document.documentElement.style.setProperty("--app-height", window.innerHeight + "px");
+    }
+
+    function updateFullscreenButton() {
+      var button = document.getElementById("fullscreenButton");
+      button.textContent = document.fullscreenElement ? "EXIT FULLSCREEN" : "FULLSCREEN";
+    }
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        return;
+      }
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(function() {});
+      }
+    }
+
+    function setConnection(online) {
+      document.getElementById("connection").classList.toggle("connected", online);
+      document.getElementById("connectionText").textContent = online ? "Connected" : "Offline";
+    }
+
+    function sendButtonInput(key, value) {
+      if (!websocketCarInput || websocketCarInput.readyState !== WebSocket.OPEN) return;
+      websocketCarInput.send(key + "," + value);
+    }
+
+    function stopRepeating(action) {
+      if (!repeatTimers.has(action)) return;
+      clearInterval(repeatTimers.get(action));
+      repeatTimers.delete(action);
+    }
+
+    function startRepeating(action, value) {
+      stopRepeating(action);
+      sendButtonInput(action, value);
+      repeatTimers.set(action, setInterval(function() { sendButtonInput(action, value); }, 50));
+    }
+
+    function releaseButton(button) {
+      if (!button.classList.contains("active")) return;
+      button.classList.remove("active");
+      var action = button.dataset.action;
+      if (action === "mast" && activeMastButton === button) activeMastButton = null;
+      if (action === "mTilt" && activeTiltButton === button) activeTiltButton = null;
+      stopRepeating(action);
+      if (button.dataset.release !== undefined) sendButtonInput(action, button.dataset.release);
+    }
+
+    function pressButton(button) {
+      if (button.classList.contains("active")) return;
+      var action = button.dataset.action;
+      if (action === "mast" && activeMastButton && activeMastButton !== button) releaseButton(activeMastButton);
+      if (action === "mTilt" && activeTiltButton && activeTiltButton !== button) releaseButton(activeTiltButton);
+      button.classList.add("active");
+      if (action === "mast") activeMastButton = button;
+      if (action === "mTilt") activeTiltButton = button;
+      var value = button.dataset.value;
+      if (button.dataset.toggle === "true") {
         sendButtonInput(action, value);
-    }, 50);
+      } else if (button.dataset.repeat === "true") {
+        startRepeating(action, value);
+      } else {
+        sendButtonInput(action, value);
+      }
     }
 
-    function stopSendingButtonInput() {
-    if (intervalId !== null) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-}
-      function handleKeyDown(event) {
-        if (event.keyCode ===88)
-        {
-          sendButtonInput("light", "1");
-        }
-        if(event.keyCode == 74)
-        {
-          startSendingButtonInput("mTilt", "1");
-        }
-        if(event.keyCode == 76)
-        {
-          startSendingButtonInput("mTilt", "2");
-        }
-        if (event.keyCode === 73)
-        {
-          sendButtonInput("mast", "5");
-        }
-        if (event.keyCode === 75)
-        {
-          sendButtonInput("mast", "6");
-        }
-        if(event.keyCode === 87)
-        {
-          throttleSlider.value = parseInt(throttleSlider.value) + 255; // You can adjust the increment value as needed
-          sendButtonInput("throttle",throttleSlider.value);
-      // Trigger the 'input' event on the slider to update its value
-          throttleSlider.dispatchEvent(new Event('input'));
-        }
-        if(event.keyCode === 83)
-        {
-          throttleSlider.value = parseInt(throttleSlider.value) - 255; // You can adjust the increment value as needed
-          sendButtonInput("throttle",throttleSlider.value);
-      // Trigger the 'input' event on the slider to update its value
-          throttleSlider.dispatchEvent(new Event('input'));
-        }
-        if(event.keyCode === 65)
-        {
-          steeringSlider.value = 50; // You can adjust the increment value as needed
-          sendButtonInput("steering",50);
-      // Trigger the 'input' event on the slider to update its value
-          steeringSlider.dispatchEvent(new Event('input'));
-        }
-        if(event.keyCode === 68)
-        {
-          steeringSlider.value = 130; // You can adjust the increment value as needed
-          sendButtonInput("steering", 130);
-      // Trigger the 'input' event on the slider to update its value
-          steeringSlider.dispatchEvent(new Event('input'));
-        }
-        } 
-      function handleKeyUp(event) {
-        if(event.keyCode == 74)
-        {
-          stopSendingButtonInput();
-        }
-        if(event.keyCode == 76)
-        {
-          stopSendingButtonInput();
-        }
-        if (event.keyCode === 73);
-        {
-          sendButtonInput("mast", "0");
-        }
-        if (event.keyCode === 75)
-        {
-          sendButtonInput("mast", "0");
-        }
-        if(event.keyCode === 87)
-        {
-          throttleSlider.value = 0; // You can adjust the increment value as needed
-          sendButtonInput("throttle",0);
-          throttleSlider.dispatchEvent(new Event('input'));
-          }
-        if(event.keyCode === 83)
-        {
-          throttleSlider.value = 0; // You can adjust the increment value as needed
-          sendButtonInput("throttle",0);
-          throttleSlider.dispatchEvent(new Event('input'));
-        }
-        if(event.keyCode === 65)
-        {
-          steeringSlider.value = 90; // You can adjust the increment value as needed
-          sendButtonInput("steering", 90);
-          steeringSlider.dispatchEvent(new Event('input'));
-        }
-        if(event.keyCode === 68)
-        {
-          steeringSlider.value = 90; // You can adjust the increment value as needed
-          sendButtonInput("steering", 90);
-          steeringSlider.dispatchEvent(new Event('input'));
-        }
-        }
-      
-  
-      window.onload = initCarInputWebSocket;
-      document.getElementById("mainTable").addEventListener("touchend", function(event){
-        event.preventDefault()
+    document.querySelectorAll(".control-button").forEach(function(button) {
+      button.addEventListener("pointerdown", function(event) {
+        event.preventDefault();
+        if (button.setPointerCapture) button.setPointerCapture(event.pointerId);
+        pressButton(button);
       });
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('keyup', handleKeyUp);
-      window.addEventListener('blur', stopSendingButtonInput);
-           
-    </script>
-  </body>    
+      button.addEventListener("pointerup", function(event) {
+        event.preventDefault();
+        releaseButton(button);
+      });
+      button.addEventListener("pointercancel", function() { releaseButton(button); });
+      button.addEventListener("lostpointercapture", function() { releaseButton(button); });
+    });
+
+    function updateJoystickPosition(event) {
+      var rect = joystick.getBoundingClientRect();
+      var centerX = rect.left + rect.width / 2;
+      var centerY = rect.top + rect.height / 2;
+      var radius = rect.width * .5;
+      var maxTravel = radius * .58;
+      var x = event.clientX - centerX;
+      var y = event.clientY - centerY;
+      var distance = Math.sqrt(x * x + y * y);
+      if (distance > maxTravel) {
+        x = x * maxTravel / distance;
+        y = y * maxTravel / distance;
+      }
+      var normalizedX = x / maxTravel;
+      var normalizedY = y / maxTravel;
+      var deadZone = .08;
+      if (Math.abs(normalizedX) < deadZone) normalizedX = 0;
+      if (Math.abs(normalizedY) < deadZone) normalizedY = 0;
+      joystickState.throttle = Math.round(-normalizedY * 255);
+      joystickState.steering = Math.round(86 + normalizedX * 46);
+      joystickState.throttle = Math.max(-255, Math.min(255, joystickState.throttle));
+      joystickState.steering = Math.max(40, Math.min(132, joystickState.steering));
+      joystickKnob.style.left = (50 + normalizedX * 29) + "%";
+      joystickKnob.style.top = (50 + normalizedY * 29) + "%";
+      document.getElementById("throttleValue").textContent = joystickState.throttle;
+      document.getElementById("steeringValue").textContent = joystickState.steering;
+    }
+
+    function sendJoystickState() {
+      sendButtonInput("throttle", joystickState.throttle);
+      sendButtonInput("steering", joystickState.steering);
+    }
+
+    function resetJoystick() {
+      joystickActive = false;
+      if (joystickTimer !== null) {
+        clearInterval(joystickTimer);
+        joystickTimer = null;
+      }
+      joystickState.throttle = 0;
+      joystickState.steering = 86;
+      joystickKnob.style.left = "50%";
+      joystickKnob.style.top = "50%";
+      document.getElementById("throttleValue").textContent = "0";
+      document.getElementById("steeringValue").textContent = "86";
+      sendButtonInput("throttle", "0");
+      sendButtonInput("steering", "86");
+    }
+
+    joystick.addEventListener("pointerdown", function(event) {
+      event.preventDefault();
+      lastJoystickPointerId = event.pointerId;
+      if (joystick.setPointerCapture) joystick.setPointerCapture(event.pointerId);
+      joystickActive = true;
+      updateJoystickPosition(event);
+      sendJoystickState();
+      joystickTimer = setInterval(sendJoystickState, 50);
+    });
+    joystick.addEventListener("pointermove", function(event) {
+      if (!joystickActive || event.pointerId !== lastJoystickPointerId) return;
+      event.preventDefault();
+      updateJoystickPosition(event);
+    });
+    joystick.addEventListener("pointerup", function(event) {
+      if (event.pointerId === lastJoystickPointerId) resetJoystick();
+    });
+    joystick.addEventListener("pointercancel", resetJoystick);
+    joystick.addEventListener("lostpointercapture", function() { if (joystickActive) resetJoystick(); });
+
+    function stopAllControls() {
+      stopRepeating("mTilt");
+      if (activeMastButton) releaseButton(activeMastButton);
+      if (activeTiltButton) releaseButton(activeTiltButton);
+      resetJoystick();
+      pressedKeys.clear();
+    }
+
+    function keyboardCommand(key, down) {
+      if (pressedKeys.has(key) === down) return;
+      if (down) pressedKeys.add(key); else pressedKeys.delete(key);
+      if (key === "w" || key === "s") {
+        joystickState.throttle = down ? (key === "w" ? 255 : -255) : 0;
+        joystickState.steering = 86;
+        sendButtonInput("throttle", joystickState.throttle);
+        if (!down) sendButtonInput("steering", "86");
+      } else if (key === "a" || key === "d") {
+        joystickState.steering = down ? (key === "a" ? 40 : 132) : 86;
+        sendButtonInput("steering", joystickState.steering);
+      } else if (key === "i" || key === "k") {
+        sendButtonInput("mast", down ? (key === "i" ? "6" : "5") : "0");
+      } else if (key === "j" || key === "l") {
+        if (down) startRepeating("mTilt", key === "j" ? "1" : "2"); else stopRepeating("mTilt");
+      } else if (key === "x" && down) {
+        sendButtonInput("light", "1");
+      }
+    }
+
+    function handleKey(event, down) {
+      var key = event.key.toLowerCase();
+      if (["w", "a", "s", "d", "i", "k", "j", "l", "x"].indexOf(key) === -1) return;
+      event.preventDefault();
+      keyboardCommand(key, down);
+    }
+    document.addEventListener("keydown", function(event) { handleKey(event, true); });
+    document.addEventListener("keyup", function(event) { handleKey(event, false); });
+
+    function initCarInputWebSocket() {
+      websocketCarInput = new WebSocket(webSocketCarInputUrl);
+      websocketCarInput.onopen = function() { setConnection(true); };
+      websocketCarInput.onclose = function() { setConnection(false); stopAllControls(); setTimeout(initCarInputWebSocket, 2000); };
+      websocketCarInput.onerror = function() { setConnection(false); };
+      websocketCarInput.onmessage = function() {};
+    }
+
+    window.onload = initCarInputWebSocket;
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("orientationchange", function() { setTimeout(updateViewportHeight, 250); });
+    document.getElementById("fullscreenButton").addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
+    window.addEventListener("blur", stopAllControls);
+    document.addEventListener("visibilitychange", function() { if (document.hidden) stopAllControls(); });
+  </script>
+</body>
 </html>
 )HTMLHOMEPAGE";
