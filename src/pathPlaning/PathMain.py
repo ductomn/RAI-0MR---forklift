@@ -3,6 +3,7 @@ import numpy as np
 import heapq
 from pathPlaning.path_Search import AstarHybrid
 from pathPlaning.kinodynamicRRT import KinodynamicRRT
+from pathPlaning.PathMainDijkstra import Dijkstra
 
 
 class Node:
@@ -13,15 +14,22 @@ class Node:
         self.parent = parent  # last node state from witch it was created
 
     def __lt__(self, other):
-        return self.cost[2] < other.cost[2]  # compare cost
+        if isinstance(self.cost, (list, tuple, np.ndarray)):
+            return self.cost[2] < other.cost[2]
+        return self.cost < other.cost
 
 
 class MainPathPlaning:
+    # The old target was 200 mm behind the pallet marker. A 100 mm target is
+    # the midpoint between that virtual target and the detected marker.
+    GOAL_STANDOFF_MM = 100.0
+
     def __init__(self):
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
         self.goalReached = False  # am i in goal ? XD
+        self.plan_complete = False
 
         v = 100  # mm/s
         self.avalibeActions = [
@@ -40,6 +48,7 @@ class MainPathPlaning:
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
+        self.plan_complete = False
 
         # define planer class
         planer = AstarHybrid(dt, self.avalibeActions, goal, stateSpace)
@@ -57,6 +66,7 @@ class MainPathPlaning:
         closed = set()
         open_visited = {}  # state_key
         heapq.heappush(open_set, startNode)
+        best_node = startNode
         i = 0
 
         # main path calculation loop
@@ -65,8 +75,11 @@ class MainPathPlaning:
             selectedNode = heapq.heappop(open_set)
 
             #  ceckGoal
+            if selectedNode.cost[1] < best_node.cost[1]:
+                best_node = selectedNode
             if planer.checkGoal(tol, thetaTol, selectedNode):
                 self.path, self.actions = planer.reconstructPath(selectedNode)
+                self.plan_complete = True
                 return
             elif planer.checkBoundaries(goal):
                 return
@@ -101,7 +114,10 @@ class MainPathPlaning:
 
                 # Stop if too long search
                 if i >= 1e5:
-                    self.actions = planer.reconstructPath(newNode)[1]
+                    # Keep the best partial trajectory for visualisation. It is
+                    # deliberately marked incomplete so autonomous control will
+                    # not execute it as though the goal had been reached.
+                    self.path, self.actions = planer.reconstructPath(best_node)
                     return
 
     def startKinodynamicRRT(self, dt, start, goal, stateSpace, tol):
@@ -109,9 +125,79 @@ class MainPathPlaning:
         self.path = []  # [x, y, theta]
         self.actions = []  # [v, fi]
         self.index = 1  # this defines index of actual action that is processed
+        self.plan_complete = False
 
         planer = KinodynamicRRT(dt, self.avalibeActions, goal, stateSpace)
         self.path, self.actions = planer.plan(start, tol)
+        self.plan_complete = bool(self.path)
+
+    def startDijkstra(self, dt, start, goal, stateSpace, dTol, thetaTol):
+        """Run Dijkstra while keeping the shared path-planner state."""
+        self.path = []
+        self.actions = []
+        self.index = 1
+        self.plan_complete = False
+
+        planer = Dijkstra(dt, self.avalibeActions, goal, stateSpace)
+        start_node = Node(0, start, [0, 0], None)
+        open_queue = [start_node]
+        closed = set()
+        open_visited = {}
+        best_node = start_node
+        best_distance = float("inf")
+        expansions = 0
+
+        while open_queue:
+            selected_node = heapq.heappop(open_queue)
+            selected_key = self.state_key(selected_node.state)
+            if selected_key in closed:
+                continue
+
+            distance_to_goal = np.linalg.norm(
+                np.asarray(selected_node.state[:2]) - np.asarray(goal[:2])
+            )
+            if distance_to_goal < best_distance:
+                best_node = selected_node
+                best_distance = distance_to_goal
+
+            if planer.checkGoal(selected_node.state, dTol, thetaTol):
+                self.path, self.actions = planer.reconstructPath(selected_node)
+                self.plan_complete = True
+                return
+            if planer.checkBoundaries(goal):
+                return
+
+            closed.add(selected_key)
+            for state, action in zip(
+                planer.lookAround(selected_node.state), self.avalibeActions
+            ):
+                if planer.checkBoundaries(state):
+                    continue
+
+                new_cost = planer.cost(
+                    selected_node.state, state, selected_node.cost
+                )
+                key = self.state_key(state)
+                if key in closed:
+                    continue
+                if key not in open_visited or new_cost < open_visited[key]:
+                    open_visited[key] = new_cost
+                    heapq.heappush(
+                        open_queue,
+                        Node(new_cost, state, action, selected_node),
+                    )
+                    expansions += 1
+
+                if expansions >= 100_000:
+                    self.path, self.actions = planer.reconstructPath(best_node)
+                    return
+
+    def clear(self):
+        self.path = []
+        self.actions = []
+        self.index = 1
+        self.goalReached = False
+        self.plan_complete = False
 
     def state_key(self, stateCheck):
         # this function is only for unpacking states
@@ -119,20 +205,14 @@ class MainPathPlaning:
         return (round(float(x), -1), round(float(y), -1), round(float(theta), 1))
 
     def newGoalState(self, goalState):
-        # unpack states
+        """Return a virtual approach goal with clearance from the pallet."""
         x, y, theta = goalState
-
-        # define how far i want to move in mm
-        c = -200
-        # calculate change in mm
-        dx = c * np.cos(theta)
-        dy = c * np.sin(theta)
-
-        # add change to state
-        nx = x + dx
-        ny = y + dy
-
-        return [nx, ny, theta]
+        offset = -self.GOAL_STANDOFF_MM
+        return [
+            x + offset * np.cos(theta),
+            y + offset * np.sin(theta),
+            theta,
+        ]
 
     def inGoal(self, epsilon, epsilonTheta, realState, goalState):
         # goal state

@@ -267,12 +267,16 @@ When path visualisation is turned on, the planned trajectory is drawn directly o
 
 ### Status and controls
 
-- **Green `"Path Planning Active"` indicator** — confirms the closed-loop tracking thread is running, displayed only when path found
-- **Drift feedback** — if the forklift drifts outside the error threshold, the UI shows the path being cleared and replanning starting
-- **Control buttons** 
-    - `Show path` — toggle path display
-    - `Go` — start/stop executing actions returned from path-planning
-    - `Override` —  stop executing commands and enable user to drive the forklift with keyboard (W, A, S, D)
+The desktop dashboard can be opened before any hardware is available. Select and connect a USB/OpenCV or OAK-D camera, enter the forklift IP address (the default is `192.168.4.1`), and connect the forklift from the right-hand control panel.
+
+- **Camera and marker status** — shows camera availability and whether the two required ArUco markers are visible.
+- **Planner selector** — switches between Hybrid A*, Kinodynamic RRT, and Dijkstra. Changing planner stops autonomous movement and clears the old path.
+- **Show path** — toggles planned-path visualization on the camera feed.
+- **Start autonomous** — becomes available when the camera, forklift, and markers are ready.
+- **Manual override** — enables keyboard driving: `W/A/S/D` for movement, `J/K` for the mast, and `H/L` for tilt.
+- **Emergency stop** — immediately cancels autonomous/manual operation and sends neutral movement commands.
+
+Disconnecting hardware, losing the camera/markers, changing planners, or closing the application stops autonomous commands. The ESP32-hosted mobile controller uses a fixed viewport to prevent accidental pinch and double-tap zoom while driving.
 
 ---
 

@@ -4,8 +4,19 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 <!DOCTYPE html>
 <html>
   <head>
-  <meta name="viewport" content="width=device-width, initial-scale=.9, maximum-scale=1, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+    #mainTable {
+      width: min(400px, 94vw) !important;
+    }
     .arrows {
       font-size:50px;
       color:grey;
@@ -56,7 +67,7 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 
     .slider {
       -webkit-appearance: none;
-      width: 150%;
+      width: 100%;
       height: 20px;
       border-radius: 5px;
       background: #d3d3d3;
@@ -133,7 +144,7 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
     </style>
   
   </head>
-  <body class="noselect" align="center" style="background-color:white; overflow: hidden;" >
+  <body class="noselect" align="center" style="background-color:white;" >
     <h1 style="color: black; text-align:center;">MINI-FORK</h1>
     
     <table id="mainTable" style="width:400px;margin:auto;table-layout:fixed" CELLSPACING=10>
@@ -173,16 +184,14 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
     </div>
   </td>
   <td>
-    <button id="auxButton" class="auxButton"
-    ontouchstart='startSendingButtonInput("mTilt", "1")'
-    onmousedown='startSendingButtonInput("mTilt", "1")'
-    ontouchend='stopSendingButtonInput()'
-    onmouseup='stopSendingButtonInput()'>FTILT</button>
-    <button id="auxButton" class="auxButton"
-    ontouchstart='startSendingButtonInput("mTilt", "2")'
-    onmousedown='startSendingButtonInput("mTilt", "2")'
-    ontouchend='stopSendingButtonInput()'
-    onmouseup='stopSendingButtonInput()'>BTILT</button>
+    <button class="auxButton"
+    onpointerdown='this.setPointerCapture(event.pointerId); startSendingButtonInput("mTilt", "1")'
+    onpointerup='stopSendingButtonInput()'
+    onpointercancel='stopSendingButtonInput()'>FTILT</button>
+    <button class="auxButton"
+    onpointerdown='this.setPointerCapture(event.pointerId); startSendingButtonInput("mTilt", "2")'
+    onpointerup='stopSendingButtonInput()'
+    onpointercancel='stopSendingButtonInput()'>BTILT</button>
 </td>
 <tr/>
 <tr/>
@@ -213,20 +222,26 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
       
       function sendButtonInput(key, value) 
       {
+       if (!websocketCarInput || websocketCarInput.readyState !== WebSocket.OPEN) return;
        var data = key + "," + value;
        websocketCarInput.send(data);
       }
       let intervalId = null;
 
     function startSendingButtonInput(action, value) {
-    sendButtonInput(action, value); // Send the initial input when the button is pressed
+    stopSendingButtonInput();
+    sendButtonInput(action, value);
+    // 20 Hz matches the desktop controller and avoids flooding the ESP32.
     intervalId = setInterval(function() {
-        sendButtonInput(action, value); // Continuously send the input as long as the button is pressed
-    }, 10); // You can adjust the interval (in milliseconds) to control the rate of sending
+        sendButtonInput(action, value);
+    }, 50);
     }
 
     function stopSendingButtonInput() {
-    clearInterval(intervalId); // Stop sending the input when the button is released
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
 }
       function handleKeyDown(event) {
         if (event.keyCode ===88)
@@ -327,7 +342,8 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
         event.preventDefault()
       });
       document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('keyup', handleKeyUp); 
+      document.addEventListener('keyup', handleKeyUp);
+      window.addEventListener('blur', stopSendingButtonInput);
            
     </script>
   </body>    

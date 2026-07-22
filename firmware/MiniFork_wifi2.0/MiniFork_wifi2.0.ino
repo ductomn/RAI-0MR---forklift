@@ -43,7 +43,6 @@ const char* ssid = "MiniFork";
 Servo steeringServo;
 Servo mastTiltServo;
 
-int servoDelay = 0;
 float steeringServoValue = 86;
 float steeringAdjustment = 1;
 int throttleValue = 0;
@@ -66,7 +65,7 @@ void steeringControl(int steeringValue)
   } else if (steeringServoValue < 80) {
     steeringAdjustment = ((200 - (90 + (90 - steeringServoValue))) / 100.0);
   } else {
-    steeringAdjustment = 1.0
+    steeringAdjustment = 1.0;
   }
   processThrottle(throttleValue);
 }
@@ -134,27 +133,18 @@ void lightControl()
     lightSwitchTime = millis();
   }
 }
-void mastTilt(int mastTilt)
+void mastTilt(int direction)
 {
-   if (mastTilt == 1) {
-    if (servoDelay == 2) {
-      if (mastTiltValue >= 10 && mastTiltValue < 165) {
-        mastTiltValue = mastTiltValue + 2;
-        mastTiltServo.write(mastTiltValue);
-      }
-      servoDelay = 0;
-    }
-    servoDelay++;
+  // Apply one deterministic step per command. The previous packet counter
+  // made tilt speed depend on dropped/duplicated WebSocket messages.
+  if (direction == 1) {
+    mastTiltValue = min(mastTiltValue + 2, 165);
+  } else if (direction == 2) {
+    mastTiltValue = max(mastTiltValue - 2, 15);
   } else {
-    if (servoDelay == 2) {
-      if (mastTiltValue <= 170 && mastTiltValue > 15) {
-        mastTiltValue = mastTiltValue - 2;
-        mastTiltServo.write(mastTiltValue);
-      }
-      servoDelay = 0;
-    }
-    servoDelay++;
+    return;
   }
+  mastTiltServo.write(mastTiltValue);
 }
 
 void handleRoot(AsyncWebServerRequest *request)
